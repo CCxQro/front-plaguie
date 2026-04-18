@@ -20,9 +20,10 @@ function LocationPin({ color }: { color: string }) {
 export interface MapCardProps extends HTMLAttributes<HTMLElement> {
   data: CardData;
   fieldMap?: CardFieldMap;
+  variant?: 'incidents' | 'weather' | 'parcel';
 }
 
-export function MapCard({ data, fieldMap, className, ...props }: MapCardProps) {
+export function MapCard({ data, fieldMap, variant = 'incidents', className, ...props }: MapCardProps) {
   const title = getMappedValue<string>(data, 'title', fieldMap) ?? '';
   const value = getMappedValue<string | number>(data, 'value', fieldMap);
   const description = getMappedValue<string>(data, 'description', fieldMap);
@@ -33,6 +34,69 @@ export function MapCard({ data, fieldMap, className, ...props }: MapCardProps) {
       { color: '#EF4444', left: '6.25rem', top: '1.75rem' },
       { color: '#F97316', left: '10.25rem', top: '7.5rem' },
     ];
+
+  const humidity = typeof data.humidity === 'string' ? data.humidity : '45% Humedad';
+  const wind = typeof data.wind === 'string' ? data.wind : '12 km/h Viento';
+  const temperature = typeof data.temperature === 'string' ? data.temperature : '28C';
+  const crop = typeof data.crop === 'string' ? data.crop : 'Maiz';
+  const area = typeof data.area === 'string' ? data.area : '15 hectareas';
+  const harvest = typeof data.harvest === 'string' ? data.harvest : 'Cosecha: 15 Jul 2024';
+  const lastInspection =
+    typeof data.lastInspection === 'string' ? data.lastInspection : 'Ultima inspeccion: Hace 3 dias';
+
+  if (variant === 'weather') {
+    return (
+      <section
+        className={cx(
+          'w-full max-w-[544px] rounded-[14px] border border-[#F1F5F9] bg-[#F8FAFC] px-4 py-3',
+          className,
+        )}
+        {...props}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="grid h-12 w-12 place-content-center rounded-full bg-white text-lg shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+              ☀
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-[#0F172B]">{title}</h3>
+              <p className="text-sm text-[#62748E]">{String(value ?? 'Soleado')}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <p className="text-2xl font-bold text-[#0F172B]">{temperature}</p>
+            <div className="border-l border-[#E2E8F0] pl-4 text-xs text-[#62748E]">
+              <p>{humidity}</p>
+              <p>{wind}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (variant === 'parcel') {
+    return (
+      <section
+        className={cx('w-full max-w-[343px] rounded-[10px] border border-[#B9F8CF] bg-[#F0FDF4] p-4', className)}
+        {...props}
+      >
+        <header className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-[#0F172B]">{title}</h3>
+          {description ? <span className="text-xs text-[#00A63E]">{description}</span> : null}
+        </header>
+
+        <div className="mt-3 space-y-2 text-xs text-[#45556C]">
+          <p>{crop}</p>
+          <p>{area}</p>
+          <p>{harvest}</p>
+        </div>
+
+        <div className="mt-3 border-t border-[#E2E8F0] pt-3 text-xs text-[#62748E]">{lastInspection}</div>
+      </section>
+    );
+  }
 
   return (
     <section

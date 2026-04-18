@@ -16,6 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
+    variant: 'incidents',
     data: {
       title: 'Incidentes activos',
       value: 5,
@@ -26,6 +27,33 @@ export const Default: Story = {
         { color: '#EF4444', left: '6.25rem', top: '1.75rem' },
         { color: '#F97316', left: '10.25rem', top: '7.5rem' },
       ],
+    },
+  },
+};
+
+export const CompactWeather: Story = {
+  args: {
+    variant: 'weather',
+    data: {
+      title: 'Region Norte',
+      value: 'Soleado',
+      temperature: '28C',
+      humidity: '45% Humedad',
+      wind: '12 km/h Viento',
+    },
+  },
+};
+
+export const ParcelSummary: Story = {
+  args: {
+    variant: 'parcel',
+    data: {
+      title: 'Parcela Norte A',
+      description: 'Activa',
+      crop: 'Maiz',
+      area: '15 hectareas',
+      harvest: 'Cosecha: 15 Jul 2024',
+      lastInspection: 'Ultima inspeccion: Hace 3 dias',
     },
   },
 };
