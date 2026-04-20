@@ -132,7 +132,6 @@ const Login: React.FC = () => {
               enabled={true}
               bgColor="bg-[#75C79E]"
               fgColor="text-[#0F172A]"
-              enabled={true}
             />
           </form>
 
