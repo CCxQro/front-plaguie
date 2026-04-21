@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import InputField from './components/InputField/InputField';
+import CustomButton from './components/button/CustomButton';
+import CheckButton from './components/CheckButton/CheckButton';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -117,26 +119,20 @@ const Login: React.FC = () => {
             </div>
 
             {/* Remember */}
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="w-4 h-4 border border-[#CBD5E1] rounded"
-              />
-              <label className="text-sm font-normal leading-5 text-[#475569]">
-                Recordar sesión
-              </label>
-            </div>
+            <CheckButton
+                remember={remember}
+                setRemember={setRemember}
+                text="Recordar sesión"
+            />
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              className="w-full h-13 bg-[#75C79E] text-[#0F172A] font-bold text-sm leading-6 rounded-lg shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
-              onClick={undefined}
-            >
-              Iniciar Sesión
-            </button>
+            <CustomButton
+              title="Iniciar Sesión"
+              onPress={() => console.log('Button Pressed')}
+              enabled={true}
+              bgColor="bg-[#75C79E]"
+              fgColor="text-[#0F172A]"
+            />
           </form>
 
           {/* Register */}
