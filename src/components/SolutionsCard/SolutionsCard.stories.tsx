@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import SolutionCard from './SolutionsCard';
 import StatisticsIcon from '../SVGIcons/StatisticsIcon';
 

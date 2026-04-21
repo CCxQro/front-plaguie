@@ -17,12 +17,12 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 }) => {
   return (
     <button
-      type="submit"
+      type="button"
       className={`w-full h-13 ${bgColor} ${fgColor} font-bold text-sm leading-6 rounded-lg shadow-[0px_1px_2px_rgba(0,0,0,0.05)]`}
-      onClick={undefined}
+      onClick={onPress}
       disabled={!enabled}
     >
-      Iniciar Sesión
+      {title}
     </button>
   );
 };
