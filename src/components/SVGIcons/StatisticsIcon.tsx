@@ -1,5 +1,3 @@
-import React from "react";
-
 function StatisticsIcon() {
   return (
     <div className="grid h-14 w-14 place-content-center rounded-xl bg-[#75C79E1A]">
