@@ -14,19 +14,36 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('Email:', email);
-    console.log('Password:', password);
-
     if (!email || !password) {
       return;
     }
 
-    console.log('goog 1');
-
-    const firebaseToken =
-      'eyJhbGciOiJSUzI1NiIsImtpZCI6IjcwZmM5YzU0YjhiMjQyMWZmMTgyOTgxNTQyZmQ0NjRlOWJlYzM1NDUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcGxhZ3VpZS0xZmQ2YiIsImF1ZCI6InBsYWd1aWUtMWZkNmIiLCJhdXRoX3RpbWUiOjE3NzY2NTkzMTYsInVzZXJfaWQiOiJwbnU3UVVSZFVMUmFXUWFrZzU1WHNjWWtIZXMyIiwic3ViIjoicG51N1FVUmRVTFJhV1Fha2c1NVhzY1lrSGVzMiIsImlhdCI6MTc3NjY1OTMxNiwiZXhwIjoxNzc2NjYyOTE2LCJlbWFpbCI6ImV4YW1wbGVAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImV4YW1wbGVAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.eCeEnZSE0-9gcwHcTbyzzIJcldr_LmnBzqoLILxYNKxXmDSxs58PmK5ISd1uwihs3boTBUEOTLN29eKxcHBuN3u_atlPM6Kh7Gj7z2P3GY06F64gfhU4rdGzDiFoEh1EF1cryryVfdVg-vX3r_XqpSijGwlHLj_0buc3_X1xd2Qc5ps4CZWtrTaq-k6NMvNXLk-kEOn_KlSxukm9N2t-L9hBnjLM9IG5DduHwXnggAwmlFNCwgMOxHiM11R6KTjoznNU2Vz0BB3bg2mX7x2VKBRAorBpy9XAtq00PYtPbAp3tpV2kJ_5blv3UJ7HF04LyUt6zRyKqoAzrPu81eLfEA';
-
     try {
+      // Step 1: Authenticate with Firebase to get a fresh idToken
+      const FIREBASE_API_KEY = import.meta.env.VITE_FIREBASE_API_KEY;
+      const firebaseRes = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      const firebaseData = await firebaseRes.json();
+
+      if (firebaseData.error) {
+        console.error('Firebase auth error:', firebaseData.error.message);
+        return;
+      }
+
+      const firebaseToken = firebaseData.idToken;
+
+      // Step 2: Send the token to your backend
       const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: {
@@ -34,15 +51,13 @@ const Login: React.FC = () => {
         },
         body: JSON.stringify({ firebaseToken }),
       });
-      
 
       if (response.status === 200) {
-        console.log('Login successful');
         navigate('/app');
+      } else {
+        console.log('Backend responded with status:', response.status);
       }
-      console.log('Something happened');
     } catch (error) {
-      console.log('Bad request');
       console.error('Login error:', error);
     }
   };
