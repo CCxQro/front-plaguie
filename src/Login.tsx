@@ -1,17 +1,65 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import InputField from './components/InputField/InputField';
 import CustomButton from './components/button/CustomButton';
 import CheckButton from './components/CheckButton/CheckButton';
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [fieldType, setFieldType] = useState('password');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Email:', email, 'Password:', password, 'Remember:', remember);
+
+    if (!email || !password) {
+      return;
+    }
+
+    try {
+      // Step 1: Authenticate with Firebase to get a fresh idToken
+      const FIREBASE_API_KEY = import.meta.env.VITE_FIREBASE_API_KEY;
+      const firebaseRes = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            returnSecureToken: true,
+          }),
+        }
+      );
+
+      const firebaseData = await firebaseRes.json();
+
+      if (firebaseData.error) {
+        console.error('Firebase auth error:', firebaseData.error.message);
+        return;
+      }
+
+      const firebaseToken = firebaseData.idToken;
+
+      // Step 2: Send the token to your backend
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ firebaseToken }),
+      });
+
+      if (response.status === 200) {
+        navigate('/app');
+      } else {
+        console.log('Backend responded with status:', response.status);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
   };
 
   return (
@@ -128,7 +176,7 @@ const Login: React.FC = () => {
             {/* Submit Button */}
             <CustomButton
               title="Iniciar Sesión"
-              onPress={() => console.log('Button Pressed')}
+              onPress={() => console.log('Button Pressed inside form')}
               enabled={true}
               bgColor="bg-[#75C79E]"
               fgColor="text-[#0F172A]"

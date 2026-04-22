@@ -2,7 +2,7 @@ import React from 'react';
 
 type CustomButtonProps = {
   title: string;
-  onPress: () => void;
+  onPress?: () => void; // Lo hacemos opcional porque el submit lo maneja el form
   enabled: boolean;
   bgColor?: string;
   fgColor?: string;
@@ -17,12 +17,15 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 }) => {
   return (
     <button
-      type="button"
-      className={`w-full h-13 ${bgColor} ${fgColor} font-bold text-sm leading-6 rounded-lg shadow-[0px_1px_2px_rgba(0,0,0,0.05)]`}
+      type="submit"
+      // Añadimos active:scale-95 para el efecto visual y transition para suavidad
+      className={`w-full h-13 ${bgColor} ${fgColor} font-bold text-sm leading-6 rounded-lg 
+      shadow-[0px_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 
+      active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed`}
       onClick={onPress}
       disabled={!enabled}
     >
-      {title}
+      {title} 
     </button>
   );
 };
