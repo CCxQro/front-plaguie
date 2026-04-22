@@ -82,7 +82,6 @@ function TrashIcon() {
     </svg>
   );
 }
-
 function MyApp() {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>

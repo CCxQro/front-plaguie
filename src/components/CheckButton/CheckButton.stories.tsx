@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 import { useState } from 'react';
 import CheckButton from './CheckButton';
 
@@ -15,7 +16,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof CheckButton>;
 
-const CheckButtonWrapper = (args: any) => {
+type CheckButtonStoryArgs = Omit<ComponentProps<typeof CheckButton>, 'setRemember'> & {
+  setRemember?: (value: boolean) => void;
+};
+
+const CheckButtonWrapper = (args: CheckButtonStoryArgs) => {
   const [remember, setRemember] = useState(args.remember);
 
   return (

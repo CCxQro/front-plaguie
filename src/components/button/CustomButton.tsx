@@ -25,7 +25,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       onClick={onPress}
       disabled={!enabled}
     >
-      {title} {/* <--- Antes decía "Iniciar Sesión" fijo */}
+      {title} 
     </button>
   );
 };
