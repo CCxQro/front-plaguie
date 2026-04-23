@@ -17,22 +17,83 @@ function LocationPin({ color }: { color: string }) {
   );
 }
 
+type WeatherIconType = 'sun' | 'cloud' | 'rain' | 'storm';
+
+export interface WeatherMapPoint {
+  left: string;
+  top: string;
+  icon: WeatherIconType;
+  temperature?: string;
+}
+
+function getWeatherEmoji(icon: WeatherIconType) {
+  if (icon === 'sun') return '☀️';
+  if (icon === 'cloud') return '☁️';
+  if (icon === 'rain') return '🌧️';
+
+  return '⛈️';
+}
+
+function WeatherMarker({ point }: { point: WeatherMapPoint }) {
+  return (
+    <div className="absolute -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.12)]" style={{ left: point.left, top: point.top }}>
+      <div className="flex flex-col items-center gap-1">
+        <div className="grid h-5 w-5 place-content-center text-sm" aria-hidden="true">
+          {getWeatherEmoji(point.icon)}
+        </div>
+
+        {point.temperature ? (
+          <span className="inline-flex h-[19px] min-w-[27px] items-center justify-center rounded bg-white/90 px-1 text-[10px] font-bold leading-[15px] text-[#1D293D]">
+            {point.temperature}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export interface MapCardProps extends HTMLAttributes<HTMLElement> {
   data: CardData;
   fieldMap?: CardFieldMap;
+  variant?: 'weather' | 'locations';
+  weatherPoints?: WeatherMapPoint[];
+  locationPoints?: MapPin[];
 }
 
-export function MapCard({ data, fieldMap, className, ...props }: MapCardProps) {
+export function MapCard({
+  data,
+  fieldMap,
+  variant = 'locations',
+  weatherPoints: weatherPointsProp,
+  locationPoints: locationPointsProp,
+  className,
+  ...props
+}: MapCardProps) {
   const title = getMappedValue<string>(data, 'title', fieldMap) ?? '';
   const value = getMappedValue<string | number>(data, 'value', fieldMap);
   const description = getMappedValue<string>(data, 'description', fieldMap);
   const actionLabel = getMappedValue<string>(data, 'actionLabel', fieldMap) ?? 'Ver mapa completo';
-  const locations =
-    getMappedValue<MapPin[]>(data, 'locations', fieldMap) ?? [
+
+  const locationPoints =
+    locationPointsProp ??
+    getMappedValue<MapPin[]>(data, 'locationPoints', fieldMap) ??
+    getMappedValue<MapPin[]>(data, 'locations', fieldMap) ??
+    [
       { color: '#EF4444', left: '2rem', top: '3.5rem' },
       { color: '#EF4444', left: '6.25rem', top: '1.75rem' },
       { color: '#F97316', left: '10.25rem', top: '7.5rem' },
     ];
+
+  const weatherPoints =
+    weatherPointsProp ??
+    getMappedValue<WeatherMapPoint[]>(data, 'weatherPoints', fieldMap) ??
+    [
+      { left: '62px', top: '52px', icon: 'sun', temperature: '28°' },
+      { left: '135px', top: '73px', icon: 'cloud', temperature: '22°' },
+      { left: '83px', top: '146px', icon: 'rain', temperature: '18°' },
+    ];
+
+  const isWeather = variant === 'weather';
 
   return (
     <section
@@ -53,14 +114,24 @@ export function MapCard({ data, fieldMap, className, ...props }: MapCardProps) {
         </button>
       </header>
 
-      <div className="relative mt-4 h-[210px] rounded-lg bg-[#E2E8F0]">
-        <div className="absolute inset-0 rounded-lg bg-[radial-gradient(circle_at_20%_20%,_rgba(255,255,255,0.55),_transparent_40%),_linear-gradient(135deg,_#cbd5e1,_#94a3b8)] opacity-70" />
+      <div className="relative mt-4 h-[210px] overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(255,255,255,0.7),_transparent_45%),radial-gradient(circle_at_80%_70%,_rgba(255,255,255,0.45),_transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(28deg,transparent_0_18px,rgba(255,255,255,0.45)_18px_22px,transparent_22px_52px),repeating-linear-gradient(-34deg,transparent_0_24px,rgba(255,255,255,0.4)_24px_28px,transparent_28px_58px)] opacity-70" />
+        <div className="absolute left-[18px] top-[30px] h-[56px] w-[70px] rounded-[16px] bg-[#CDECCF]/70" />
+        <div className="absolute right-[16px] top-[86px] h-[48px] w-[62px] rounded-[14px] bg-[#CDECCF]/70" />
+        <div className="absolute left-[74px] bottom-[18px] h-[40px] w-[78px] rounded-[14px] bg-[#CDECCF]/60" />
 
-        {locations.map((pin, index) => (
-          <div key={`${pin.left}-${pin.top}-${index}`} className="absolute" style={{ left: pin.left, top: pin.top }}>
-            <LocationPin color={pin.color ?? '#EF4444'} />
-          </div>
-        ))}
+        {isWeather
+          ? weatherPoints.map((point, index) => <WeatherMarker key={`${point.left}-${point.top}-${index}`} point={point} />)
+          : locationPoints.map((pin, index) => (
+              <div
+                key={`${pin.left}-${pin.top}-${index}`}
+                className="absolute -translate-x-1/2 -translate-y-full"
+                style={{ left: pin.left, top: pin.top }}
+              >
+                <LocationPin color={pin.color ?? '#EF4444'} />
+              </div>
+            ))}
 
         {description ? (
           <div className="absolute bottom-3 right-3 rounded-lg bg-white/90 px-2 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">

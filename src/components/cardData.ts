@@ -8,7 +8,9 @@ export type CardFieldKey =
   | 'trend'
   | 'messages'
   | 'actionLabel'
-  | 'locations';
+  | 'locations'
+  | 'weatherPoints'
+  | 'locationPoints';
 
 export type CardData = Record<string, unknown>;
 
