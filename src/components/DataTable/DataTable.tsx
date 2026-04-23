@@ -81,7 +81,7 @@ export function DataTable({
               <InventoryTableRow
                 key={row.id}
                 row={row}
-                variant={variant}
+                variant={variant as InventoryTableRowVariant}
                 onView={onView}
                 onEdit={onEdit}
                 onDelete={onDelete}
