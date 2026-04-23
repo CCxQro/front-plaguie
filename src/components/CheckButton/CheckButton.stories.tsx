@@ -4,7 +4,7 @@ import { useState } from 'react';
 import CheckButton from './CheckButton';
 
 const meta = {
-  title: 'Example/CheckButton',
+  title: 'Components/CheckButton',
   component: CheckButton,
   tags: ['autodocs'],
   argTypes: {
