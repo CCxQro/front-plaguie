@@ -5,7 +5,7 @@ import { fn } from 'storybook/test';
 import InputField from './InputField';
 
 const meta = {
-    title: 'Example/InputField',
+    title: 'Components/InputField',
     component: InputField,
     parameters: {
         layout: 'centered',
