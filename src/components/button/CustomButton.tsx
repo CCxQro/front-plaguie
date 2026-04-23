@@ -6,6 +6,8 @@ type CustomButtonProps = {
   enabled: boolean;
   bgColor?: string;
   fgColor?: string;
+  width?: string;
+  height?: string;
 };
 
 const CustomButton: React.FC<CustomButtonProps> = ({
@@ -14,12 +16,14 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   enabled,
   bgColor = 'bg-[#75C79E]',
   fgColor = 'text-[#0F172A]',
+  width = 'w-full',
+  height = 'h-13',
 }) => {
   return (
     <button
       type="submit"
       // Añadimos active:scale-95 para el efecto visual y transition para suavidad
-      className={`w-full h-13 ${bgColor} ${fgColor} font-bold text-sm leading-6 rounded-lg 
+      className={`${width} ${height} ${bgColor} ${fgColor} font-bold text-sm leading-6 rounded-lg 
       shadow-[0px_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 
       active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed`}
       onClick={onPress}
