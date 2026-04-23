@@ -1,4 +1,5 @@
-import { IconLogoCheck, IconLogoLeaf, SidebarIcon, type SidebarIconName } from './SidebarIcons';
+import { SidebarHeader } from './SidebarHeader';
+import { SidebarIcon, type SidebarIconName } from './SidebarIcons';
 
 export type SidebarVariant = 'claro' | 'verde';
 
@@ -54,35 +55,12 @@ export function Sidebar({
       )}
       aria-label="Barra lateral"
     >
-      <div
-        className={cx(
-          'flex h-22 items-center gap-3 px-6',
-          isGreen && 'h-23.25 border-b border-[#00A63E] pb-px',
-        )}
-      >
-        <div
-          className={cx(
-            'grid h-10 w-10 place-content-center rounded-[10px]',
-            isGreen ? 'bg-white/20 text-white' : 'rounded-lg bg-[#75C79E] text-white',
-          )}
-        >
-          {isGreen ? <IconLogoCheck className="h-6 w-6" /> : <IconLogoLeaf className="h-4.25 w-4.25" />}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <p
-            className={cx(
-              'leading-none',
-              isGreen ? 'text-[18px] font-bold leading-7 tracking-[-0.439px]' : 'text-[20px] font-normal leading-5 tracking-[-0.5px]',
-            )}
-          >
-            {appName}
-          </p>
-          <p className={cx('text-xs leading-4', isGreen ? 'text-[#B9F8CF]' : 'text-[#64748B]')}>
-            {isGreen ? roleLabel || appSubtitle : appSubtitle}
-          </p>
-        </div>
-      </div>
+      <SidebarHeader
+        variant={isGreen ? 'green' : 'normal'}
+        appName={appName}
+        appSubtitle={appSubtitle}
+        roleLabel={roleLabel}
+      />
 
       <nav className={cx('flex-1 px-4', isGreen ? 'space-y-1 pt-6' : 'space-y-1 pt-5')} aria-label="Navegacion principal">
         {items.map((item) => {
