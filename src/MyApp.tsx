@@ -1,32 +1,78 @@
-type UserStatus = 'Activo' | 'Inactivo';
+import { useEffect, useMemo, useState } from 'react';
 
-type UserRow = {
-  id: number;
+import { Sidebar, type SidebarItem } from './components/Sidebar/Sidebar';
+import { mockUserService, type UpsertUserPayload, type UserEntityDTO } from './services/mockUserService';
+
+type ModalMode = 'create' | 'edit';
+
+type UserFormState = {
   name: string;
   email: string;
-  zone: string;
-  status: UserStatus;
+  roleId: number;
+  zoneAssigned: string;
+  isActive: boolean;
 };
 
-const users: UserRow[] = [
-  { id: 1, name: 'Carlos Ruiz', email: 'carlos.ruiz@plaguie.com', zone: 'Zona Norte', status: 'Activo' },
-  { id: 2, name: 'Elena Gomez', email: 'elena.gomez@plaguie.com', zone: 'Zona Sur', status: 'Activo' },
-  { id: 3, name: 'Mario Sosa', email: 'mario.sosa@plaguie.com', zone: 'Zona Centro', status: 'Inactivo' },
-  { id: 4, name: 'Lucia Mendez', email: 'lucia.mendez@plaguie.com', zone: 'Zona Oeste', status: 'Activo' },
-  { id: 5, name: 'Juan Perez', email: 'juan.perez@agro.com', zone: 'N/A', status: 'Activo' },
-  { id: 6, name: 'Ana Torres', email: 'ana.torres@agro.com', zone: 'N/A', status: 'Activo' },
-];
+const ROLE_OPTIONS = [
+  { id: 1, label: 'Administrador' },
+  { id: 2, label: 'Supervisor' },
+  { id: 3, label: 'Operador' },
+] as const;
 
-const navItems = [
-  'Dashboard',
-  'Gestion de Usuarios',
-  'Inventario Global',
-  'Validacion de Registros',
-  'Dashboards',
+const ZONE_OPTIONS = ['Zona Norte', 'Zona Sur', 'Zona Centro', 'Zona Oeste', 'N/A'] as const;
+
+const SIDEBAR_ITEMS: SidebarItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'usuarios', label: 'Gestion de Usuarios', icon: 'usuarios' },
+  { id: 'inventarioGlobal', label: 'Inventario Global', icon: 'cubo' },
+  { id: 'validacion', label: 'Validacion de Registros', icon: 'validacion' },
+  { id: 'dashboards', label: 'Dashboards', icon: 'dashboards' },
 ];
 
 const inputBase =
   'h-11 w-full rounded-[10px] border border-[#D1D5DC] bg-white pl-10 pr-4 text-[15px] text-[#4A5565] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/25';
+
+const formInputBase =
+  'h-11 w-full rounded-[10px] border border-[#D1D5DC] bg-white px-4 text-[15px] text-[#101828] placeholder:text-[#99A1AF] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/25';
+
+const EMPTY_FORM: UserFormState = {
+  name: '',
+  email: '',
+  roleId: 3,
+  zoneAssigned: 'N/A',
+  isActive: true,
+};
+
+function roleLabel(roleId: number): string {
+  return ROLE_OPTIONS.find((role) => role.id === roleId)?.label ?? 'Sin rol';
+}
+
+function buildUserPayload(form: UserFormState): UpsertUserPayload {
+  return {
+    name: form.name.trim(),
+    email: form.email.trim().toLowerCase(),
+    roleId: form.roleId,
+    zoneAssigned: form.zoneAssigned,
+    isActive: form.isActive,
+  };
+}
+
+function userToForm(user: UserEntityDTO): UserFormState {
+  return {
+    name: user.name,
+    email: user.email,
+    roleId: user.roleId,
+    zoneAssigned: user.zoneAssigned,
+    isActive: user.isActive,
+  };
+}
+
+function hasValidForm(form: UserFormState): boolean {
+  if (!form.name.trim()) return false;
+  if (!form.email.trim()) return false;
+
+  return /^\S+@\S+\.\S+$/.test(form.email);
+}
 
 function SearchIcon() {
   return (
@@ -82,60 +128,158 @@ function TrashIcon() {
     </svg>
   );
 }
+
 function MyApp() {
+  const [users, setUsers] = useState<UserEntityDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeItemId, setActiveItemId] = useState('usuarios');
+  const [globalSearchTerm, setGlobalSearchTerm] = useState('');
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<ModalMode>('create');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [formState, setFormState] = useState<UserFormState>(EMPTY_FORM);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const fetchedUsers = await mockUserService.fetchAllUsers();
+        setUsers(fetchedUsers);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadUsers();
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const query = `${globalSearchTerm} ${userSearchTerm}`.trim().toLowerCase();
+
+    if (!query) {
+      return users;
+    }
+
+    return users.filter((user) => {
+      return (
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        roleLabel(user.roleId).toLowerCase().includes(query) ||
+        user.zoneAssigned.toLowerCase().includes(query)
+      );
+    });
+  }, [users, globalSearchTerm, userSearchTerm]);
+
+  const openCreateModal = () => {
+    setModalMode('create');
+    setSelectedUserId(null);
+    setFormState(EMPTY_FORM);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (user: UserEntityDTO) => {
+    setModalMode('edit');
+    setSelectedUserId(user.userId);
+    setFormState(userToForm(user));
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedUserId(null);
+  };
+
+  const handleCreateOrUpdateUser = async () => {
+    if (!hasValidForm(formState)) {
+      alert('Completa los campos obligatorios con datos validos.');
+      return;
+    }
+
+    const payload = buildUserPayload(formState);
+
+    if (modalMode === 'create') {
+      const createdUser = await mockUserService.createUser(payload);
+      setUsers((current) => [...current, createdUser]);
+      alert('Usuario creado - API no conectada aun (simulacion localStorage).');
+      closeModal();
+      return;
+    }
+
+    if (!selectedUserId) {
+      return;
+    }
+
+    const updatedUser = await mockUserService.updateUser(selectedUserId, payload);
+    setUsers((current) => current.map((user) => (user.userId === selectedUserId ? updatedUser : user)));
+    alert('Usuario actualizado - API no conectada aun (simulacion localStorage).');
+    closeModal();
+  };
+
+  const handleRoleChange = async (user: UserEntityDTO, newRoleId: number) => {
+    const updatedUser = await mockUserService.updateUser(user.userId, {
+      name: user.name,
+      email: user.email,
+      roleId: newRoleId,
+      zoneAssigned: user.zoneAssigned,
+      isActive: user.isActive,
+    });
+
+    setUsers((current) => current.map((item) => (item.userId === user.userId ? updatedUser : item)));
+    alert('Rol actualizado - API no conectada aun (simulacion localStorage).');
+  };
+
+  const handleToggleStatus = async (user: UserEntityDTO) => {
+    const nextStatus = !user.isActive;
+    const updatedUser = await mockUserService.updateUser(user.userId, {
+      name: user.name,
+      email: user.email,
+      roleId: user.roleId,
+      zoneAssigned: user.zoneAssigned,
+      isActive: nextStatus,
+    });
+
+    setUsers((current) => current.map((item) => (item.userId === user.userId ? updatedUser : item)));
+    alert(`Usuario ${nextStatus ? 'activado' : 'desactivado'} - API no conectada aun (simulacion localStorage).`);
+  };
+
+  const handleDelete = async (user: UserEntityDTO) => {
+    const confirmed = window.confirm(`Eliminar a ${user.name}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    await mockUserService.deleteUser(user.userId);
+    setUsers((current) => current.filter((item) => item.userId !== user.userId));
+    alert('Usuario eliminado - API no conectada aun (simulacion localStorage).');
+  };
+
+  const handleSidebarItemClick = (itemId: string) => {
+    setActiveItemId(itemId);
+
+    if (itemId !== 'usuarios') {
+      alert('Seccion en construccion. API y rutas reales aun no conectadas.');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <div className="h-7 w-full bg-[#18181B] px-4 text-xs leading-7 text-white">Admin</div>
-
-      <div className="flex min-h-[calc(100vh-28px)] flex-col bg-[#F9FAFB] md:flex-row">
-        <aside className="w-full bg-gradient-to-b from-[#008236] to-[#016630] text-white md:w-64">
-          <div className="border-b border-[#00A63E] px-6 py-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white/20">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px]">✓</span>
-              </div>
-              <div>
-                <p className="text-[18px] font-bold leading-7">Plaguie</p>
-                <p className="text-xs text-[#B9F8CF]">Administrador</p>
-              </div>
-            </div>
-          </div>
-
-          <nav className="flex flex-wrap gap-2 px-4 py-6 md:flex-col md:gap-1">
-            {navItems.map((item) => {
-              const active = item === 'Gestion de Usuarios';
-
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  className={`flex h-11 items-center rounded-[10px] px-4 text-left text-sm font-medium transition ${
-                    active ? 'bg-white/20 text-white' : 'text-[#DCFCE7] hover:bg-white/10'
-                  }`}
-                >
-                  <span className="mr-3 text-base">◻</span>
-                  {item}
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="border-t border-[#00A63E] px-4 py-4">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00A63E] text-sm font-semibold">
-                AP
-              </div>
-              <div>
-                <p className="text-sm font-medium">Admin Plaguie</p>
-                <p className="text-xs text-[#B9F8CF]">admin@plaguie.com</p>
-              </div>
-            </div>
-            <button type="button" className="flex h-9 w-full items-center rounded-[10px] px-4 text-sm font-medium text-[#DCFCE7] hover:bg-white/10">
-              <span className="mr-2">↪</span>
-              Cerrar Sesion
-            </button>
-          </div>
-        </aside>
+    <div className="min-h-screen bg-[#F9FAFB]" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div className="flex min-h-screen flex-col bg-[#F9FAFB] md:flex-row">
+        <Sidebar
+          variant="verde"
+          appName="Plaguie"
+          appSubtitle="Administrador"
+          roleLabel="Administrador"
+          items={SIDEBAR_ITEMS}
+          activeItemId={activeItemId}
+          footerActionLabel="Cerrar Sesion"
+          userName="Admin Plaguie"
+          userDetail="admin@plaguie.com"
+          userInitials="AP"
+          className="h-auto min-h-screen"
+          onItemClick={handleSidebarItemClick}
+          onFooterActionClick={() => alert('Sesion cerrada (simulada) - API no conectada aun.')}
+        />
 
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="border-b border-[#E5E7EB] bg-white px-4 py-4 md:px-8">
@@ -144,10 +288,19 @@ function MyApp() {
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#99A1AF]">
                   <SearchIcon />
                 </span>
-                <input className={inputBase} placeholder="Buscar en el sistema..." />
+                <input
+                  className={inputBase}
+                  placeholder="Buscar en el sistema..."
+                  value={globalSearchTerm}
+                  onChange={(event) => setGlobalSearchTerm(event.target.value)}
+                />
               </div>
 
-              <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-[10px] text-[#4A5565] hover:bg-[#F3F4F6]">
+              <button
+                type="button"
+                className="relative flex h-10 w-10 items-center justify-center rounded-[10px] text-[#4A5565] hover:bg-[#F3F4F6]"
+                onClick={() => alert('Notificaciones cargadas (simuladas) - API no conectada aun.')}
+              >
                 <BellIcon />
                 <span className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-[#FB2C36]" />
               </button>
@@ -164,6 +317,7 @@ function MyApp() {
               <button
                 type="button"
                 className="inline-flex h-12 items-center justify-center rounded-[10px] bg-[#00A63E] px-6 text-base font-medium text-white shadow-sm hover:bg-[#019437]"
+                onClick={openCreateModal}
               >
                 <span className="mr-2 text-lg">⊕</span>
                 Crear Usuario
@@ -174,7 +328,12 @@ function MyApp() {
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#99A1AF]">
                 <SearchIcon />
               </span>
-              <input className="h-[50px] w-full rounded-[10px] border border-[#D1D5DC] bg-white pl-12 pr-4 text-[15px] text-[#4A5565] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/25" placeholder="Buscar usuario por nombre o correo..." />
+              <input
+                className="h-[50px] w-full rounded-[10px] border border-[#D1D5DC] bg-white pl-12 pr-4 text-[15px] text-[#4A5565] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/25"
+                placeholder="Buscar usuario por nombre o correo..."
+                value={userSearchTerm}
+                onChange={(event) => setUserSearchTerm(event.target.value)}
+              />
             </div>
 
             <div className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
@@ -192,13 +351,26 @@ function MyApp() {
                   </thead>
 
                   <tbody>
-                    {users.map((user) => {
+                    {loading ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#6A7282]">
+                          Cargando usuarios...
+                        </td>
+                      </tr>
+                    ) : filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#6A7282]">
+                          No hay usuarios para los filtros actuales.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUsers.map((user) => {
                       const initials = user.name.charAt(0).toUpperCase();
-                      const active = user.status === 'Activo';
+                      const active = user.isActive;
                       const showActivate = !active;
 
                       return (
-                        <tr key={user.id} className="border-b border-[#E5E7EB] last:border-b-0">
+                        <tr key={user.userId} className="border-b border-[#E5E7EB] last:border-b-0">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#05DF72] to-[#00A63E] text-base font-medium text-white">
@@ -211,24 +383,26 @@ function MyApp() {
                           <td className="px-6 py-4 text-base text-[#4A5565]">{user.email}</td>
 
                           <td className="px-6 py-4">
-                            {user.zone === 'N/A' ? (
+                            {user.zoneAssigned === 'N/A' ? (
                               <span className="text-sm text-[#99A1AF]">N/A</span>
                             ) : (
                               <span className="inline-flex rounded-full bg-[#DBEAFE] px-3 py-1 text-xs font-medium text-[#193CB8]">
-                                {user.zone}
+                                {user.zoneAssigned}
                               </span>
                             )}
                           </td>
 
                           <td className="px-6 py-4">
                             <select
-                              defaultValue=""
+                              value={user.roleId}
+                              onChange={(event) => void handleRoleChange(user, Number(event.target.value))}
                               className="h-8 w-[137px] rounded-[10px] border border-[#D1D5DC] bg-white px-3 text-sm text-[#4A5565] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/25"
                             >
-                              <option value="" disabled />
-                              <option>Administrador</option>
-                              <option>Supervisor</option>
-                              <option>Operador</option>
+                              {ROLE_OPTIONS.map((role) => (
+                                <option key={role.id} value={role.id}>
+                                  {role.label}
+                                </option>
+                              ))}
                             </select>
                           </td>
 
@@ -245,13 +419,18 @@ function MyApp() {
                                   active ? 'bg-[#00C950]' : 'bg-[#6A7282]'
                                 }`}
                               />
-                              {user.status}
+                              {active ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
 
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
-                              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[#155DFC] hover:bg-[#EFF6FF]" aria-label="Editar">
+                              <button
+                                type="button"
+                                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[#155DFC] hover:bg-[#EFF6FF]"
+                                aria-label="Editar"
+                                onClick={() => openEditModal(user)}
+                              >
                                 <PencilIcon />
                               </button>
 
@@ -263,27 +442,147 @@ function MyApp() {
                                     : 'text-[#F54900] hover:bg-[#FFF2EB]'
                                 }`}
                                 aria-label={showActivate ? 'Activar' : 'Desactivar'}
+                                onClick={() => void handleToggleStatus(user)}
                               >
                                 {showActivate ? <CheckCircleIcon /> : <BanIcon />}
                               </button>
 
-                              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[#E7000B] hover:bg-[#FEF2F2]" aria-label="Eliminar">
+                              <button
+                                type="button"
+                                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[#E7000B] hover:bg-[#FEF2F2]"
+                                aria-label="Eliminar"
+                                onClick={() => void handleDelete(user)}
+                              >
                                 <TrashIcon />
                               </button>
                             </div>
                           </td>
                         </tr>
                       );
-                    })}
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            <p className="mt-5 text-sm text-[#6A7282]">Mostrando 6 de 6 usuarios registrados</p>
+            <p className="mt-5 text-sm text-[#6A7282]">
+              Mostrando {filteredUsers.length} de {users.length} usuarios registrados
+            </p>
           </section>
         </main>
       </div>
+
+      {modalOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
+          <div className="w-full max-w-xl rounded-[14px] bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-start justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-[#101828]">
+                  {modalMode === 'create' ? 'Crear Usuario' : 'Editar Usuario'}
+                </h2>
+                <p className="mt-1 text-sm text-[#4A5565]">
+                  {modalMode === 'create'
+                    ? 'Completa los datos para crear un nuevo usuario.'
+                    : 'Actualiza los datos y guarda los cambios.'}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="rounded-[10px] p-2 text-[#6A7282] hover:bg-[#F3F4F6]"
+                onClick={closeModal}
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#101828]">Nombre</label>
+                <input
+                  className={formInputBase}
+                  placeholder="Nombre completo"
+                  value={formState.name}
+                  onChange={(event) => setFormState((current) => ({ ...current, name: event.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#101828]">Email</label>
+                <input
+                  className={formInputBase}
+                  placeholder="correo@empresa.com"
+                  value={formState.email}
+                  onChange={(event) => setFormState((current) => ({ ...current, email: event.target.value }))}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#101828]">Rol / Permisos</label>
+                  <select
+                    className={formInputBase}
+                    value={formState.roleId}
+                    onChange={(event) => setFormState((current) => ({ ...current, roleId: Number(event.target.value) }))}
+                  >
+                    {ROLE_OPTIONS.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#101828]">Zona Asignada</label>
+                  <select
+                    className={formInputBase}
+                    value={formState.zoneAssigned}
+                    onChange={(event) => setFormState((current) => ({ ...current, zoneAssigned: event.target.value }))}
+                  >
+                    {ZONE_OPTIONS.map((zone) => (
+                      <option key={zone} value={zone}>
+                        {zone}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-3 rounded-[10px] border border-[#D1D5DC] p-3 text-sm text-[#4A5565]">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-[#00A63E]"
+                  checked={formState.isActive}
+                  onChange={(event) => setFormState((current) => ({ ...current, isActive: event.target.checked }))}
+                />
+                Usuario activo
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                className="h-11 rounded-[10px] border border-[#D1D5DC] px-4 text-sm font-medium text-[#4A5565] hover:bg-[#F9FAFB]"
+                onClick={closeModal}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="h-11 rounded-[10px] bg-[#00A63E] px-4 text-sm font-medium text-white hover:bg-[#019437] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => void handleCreateOrUpdateUser()}
+                disabled={!hasValidForm(formState)}
+              >
+                {modalMode === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
