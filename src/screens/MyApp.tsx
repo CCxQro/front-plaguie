@@ -82,7 +82,16 @@ function TrashIcon() {
     </svg>
   );
 }
+import { useEffect } from 'react';
+import useAuthStore from '../services/Contexts/useAuthStore';
+
 function MyApp() {
+  const { user, token } = useAuthStore();
+
+  useEffect(() => {
+    console.log('Auth state:', { user, token });
+  }, [user, token]);
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div className="h-7 w-full bg-[#18181B] px-4 text-xs leading-7 text-white">Admin</div>
@@ -123,11 +132,11 @@ function MyApp() {
           <div className="border-t border-[#00A63E] px-4 py-4">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00A63E] text-sm font-semibold">
-                AP
+                {user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase() : 'U'}
               </div>
               <div>
-                <p className="text-sm font-medium">Admin Plaguie</p>
-                <p className="text-xs text-[#B9F8CF]">admin@plaguie.com</p>
+                <p className="text-sm font-medium">{user?.name ?? 'Usuario'}</p>
+                <p className="text-xs text-[#B9F8CF]">{user?.email ?? ''}</p>
               </div>
             </div>
             <button type="button" className="flex h-9 w-full items-center rounded-[10px] px-4 text-sm font-medium text-[#DCFCE7] hover:bg-white/10">
