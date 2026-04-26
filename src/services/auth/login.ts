@@ -9,7 +9,7 @@ export const login = async (email: string, password: string) => {
     // Enviar el token al backend utilizando nuestra instancia base
     const response = await api.post('/auth/login', { firebaseToken });
 
-    return response.data;
+    return { user: response.data, token: firebaseToken };
   } catch (error: any) {
     console.error('Login error:', error);
     throw error;

@@ -4,9 +4,11 @@ import InputField from '../components/InputField/InputField';
 import CustomButton from '../components/button/CustomButton';
 import CheckButton from '../components/CheckButton/CheckButton';
 import { login } from '../services/auth/login';
+import useAuthStore from '../services/Contexts/useAuthStore';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const authLogin = useAuthStore((state) => state.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -20,7 +22,9 @@ const Login: React.FC = () => {
     }
 
     try {
-      await login(email, password);
+      const { user, token } = await login(email, password);
+      authLogin(user, token);
+      console.log('Login response:', { user, token });
       navigate('/app');
     } catch (error) {
       console.error('Login error:', error);
