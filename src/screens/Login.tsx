@@ -5,6 +5,7 @@ import CustomButton from '../components/button/CustomButton';
 import CheckButton from '../components/CheckButton/CheckButton';
 import { login } from '../services/auth/login';
 import useAuthStore from '../services/Contexts/useAuthStore';
+import { getDefaultRoute } from '../components/ProtectedRoute/ProtectedRoute';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Login: React.FC = () => {
       const { user, token } = await login(email, password);
       authLogin(user, token);
       console.log('Login response:', { user, token });
-      navigate('/app');
+      navigate(getDefaultRoute(user.roleId));
     } catch (error) {
       console.error('Login error:', error);
     }
