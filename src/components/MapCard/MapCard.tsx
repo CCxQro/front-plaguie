@@ -43,7 +43,7 @@ function WeatherMarker({ point }: { point: WeatherMapPoint }) {
         </div>
 
         {point.temperature ? (
-          <span className="inline-flex h-[19px] min-w-[27px] items-center justify-center rounded bg-white/90 px-1 text-[10px] font-bold leading-[15px] text-[#1D293D]">
+          <span className="inline-flex h-4.75 min-w-6.75 items-center justify-center rounded bg-white/90 px-1 text-[10px] font-bold leading-[15px] text-[#1D293D]">
             {point.temperature}
           </span>
         ) : null}
@@ -105,21 +105,21 @@ export function MapCard({
     >
       <header className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-left text-lg font-medium leading-[22px] text-[#0F172A]">{title}</h3>
+          <h3 className="text-left text-lg font-medium leading-5.5 text-[#0F172A]">{title}</h3>
           {value !== undefined ? <p className="mt-1 text-sm text-[#64748B]">{String(value)}</p> : null}
         </div>
 
-        <button type="button" className="text-right text-xs font-medium leading-[15px] text-[#75C79E]">
+        <button type="button" className="text-right text-xs font-medium leading-3.75 text-[#75C79E]">
           {actionLabel}
         </button>
       </header>
 
-      <div className="relative mt-4 h-[210px] overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(255,255,255,0.7),_transparent_45%),radial-gradient(circle_at_80%_70%,_rgba(255,255,255,0.45),_transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
+      <div className="relative mt-4 h-52.5 overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.7),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.45),transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(28deg,transparent_0_18px,rgba(255,255,255,0.45)_18px_22px,transparent_22px_52px),repeating-linear-gradient(-34deg,transparent_0_24px,rgba(255,255,255,0.4)_24px_28px,transparent_28px_58px)] opacity-70" />
-        <div className="absolute left-[18px] top-[30px] h-[56px] w-[70px] rounded-[16px] bg-[#CDECCF]/70" />
-        <div className="absolute right-[16px] top-[86px] h-[48px] w-[62px] rounded-[14px] bg-[#CDECCF]/70" />
-        <div className="absolute left-[74px] bottom-[18px] h-[40px] w-[78px] rounded-[14px] bg-[#CDECCF]/60" />
+        <div className="absolute left-4.5 top-7.5 h-14 w-17.5 rounded-2xl bg-[#CDECCF]/70" />
+        <div className="absolute right-4 top-21.5 h-12 w-15.5 rounded-[14px] bg-[#CDECCF]/70" />
+        <div className="absolute left-18.5 bottom-4.5 h-10 w-19.5 rounded-[14px] bg-[#CDECCF]/60" />
 
         {isWeather
           ? weatherPoints.map((point, index) => <WeatherMarker key={`${point.left}-${point.top}-${index}`} point={point} />)
