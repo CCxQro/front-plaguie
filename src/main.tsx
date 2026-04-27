@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './index.css'
 import Login from './screens/Login'
-import MyApp from './screens/MyApp'
+import Dashboard from './screens/Dashboard'
 import AgricultorPanel from './screens/AgricultorPanel'
 import SalesTechnicianPanel from './screens/SalesTechnicianPanel'
 import ProtectedRoute, { getDefaultRoute } from './components/ProtectedRoute/ProtectedRoute'
@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')!).render(
         {/* Admin only */}
         <Route path="/app" element={
           <ProtectedRoute allowedRoles={[1]}>
-            <MyApp />
+            <Dashboard />
           </ProtectedRoute>
         } />
 
