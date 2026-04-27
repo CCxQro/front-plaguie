@@ -6,6 +6,11 @@ import Login from './screens/Login'
 import Dashboard from './screens/Dashboard'
 import AgricultorPanel from './screens/AgricultorPanel'
 import SalesTechnicianPanel from './screens/SalesTechnicianPanel'
+import SalesTechnicianLayout from './screens/SalesTechnicianLayout'
+import VentasPanel from './screens/VentasPanel'
+import ClientesPanel from './screens/ClientesPanel'
+import ProductosPanel from './screens/ProductosPanel'
+import ReportesPanel from './screens/ReportesPanel'
 import ProtectedRoute, { getDefaultRoute } from './components/ProtectedRoute/ProtectedRoute'
 import useAuthStore from './services/Contexts/useAuthStore'
 
@@ -43,9 +48,16 @@ createRoot(document.getElementById('root')!).render(
         {/* Sales Technician only */}
         <Route path="/sales-technician" element={
           <ProtectedRoute allowedRoles={[3]}>
-            <SalesTechnicianPanel />
+            <SalesTechnicianLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<Navigate to="inicio" replace />} />
+          <Route path="inicio" element={<SalesTechnicianPanel />} />
+          <Route path="ventas" element={<VentasPanel />} />
+          <Route path="clientes" element={<ClientesPanel />} />
+          <Route path="productos" element={<ProductosPanel />} />
+          <Route path="reportes" element={<ReportesPanel />} />
+        </Route>
 
         {/* Unknown routes → default page or login */}
         <Route path="*" element={<DefaultRedirect />} />
