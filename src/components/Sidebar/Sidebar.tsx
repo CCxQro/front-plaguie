@@ -7,6 +7,7 @@ export interface SidebarItem {
   id: string;
   label: string;
   icon: SidebarIconName;
+  href?: string;
 }
 
 export interface SidebarProps {
@@ -47,7 +48,7 @@ export function Sidebar({
   return (
     <aside
       className={cx(
-        'relative flex h-240 min-h-240 w-64 flex-col overflow-hidden',
+        'relative flex h-screen w-64 flex-col overflow-hidden',
         isGreen
           ? 'bg-[linear-gradient(180deg,#008236_0%,#016630_100%)] text-white'
           : 'border-r border-[#E2E8F0] bg-white text-[#475569]',
