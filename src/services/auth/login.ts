@@ -1,17 +1,20 @@
-import api from '../api';
 import { login as firebaseLogin } from '../firebase/firebaseLogin';
+import { apiFetch } from '../api';
+import type { User } from '../../types/User';
 
 export const login = async (email: string, password: string) => {
-  try {
-    // Autenticar con Firebase usando el SDK
-    const firebaseToken = await firebaseLogin(email, password);
+  const firebaseToken = await firebaseLogin(email, password);
+  const user = await apiFetch<User>(
+    '/api/auth/login',
+    {
+      method: 'POST',
+      body: JSON.stringify({ firebaseToken }),
+    },
+  );
 
-    // Enviar el token al backend utilizando nuestra instancia base
-    const response = await api.post('/auth/login', { firebaseToken });
-
-    return { user: response.data, token: firebaseToken };
-  } catch (error: any) {
-    console.error('Login error:', error);
-    throw error;
+  if (!user) {
+    throw new Error('No user data received from backend login');
   }
+
+  return { user, token: firebaseToken };
 };

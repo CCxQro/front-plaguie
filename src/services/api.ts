@@ -1,34 +1,50 @@
-import axios from 'axios';
+export const BASE_URL = 'http://localhost:8080';
 
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // Backend base URL
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
-// Interceptores pueden ser agregados aquí
-api.interceptors.request.use(
-  (config) => {
-    // Ejemplo: agregar token de autorización
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+function getErrorMessage(payload: unknown, fallback: string) {
+  if (isObject(payload) && typeof payload.error === 'string') {
+    return payload.error;
   }
-);
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Manejo global de errores
-    console.error('API Error:', error);
-    return Promise.reject(error);
+  return fallback;
+}
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  token?: string,
+): Promise<T | null> {
+  const headers = new Headers(options.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
-);
 
-export default api;
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, `Request failed with status ${response.status}`));
+  }
+
+  return payload as T;
+}
