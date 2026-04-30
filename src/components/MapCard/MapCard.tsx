@@ -36,7 +36,10 @@ function getWeatherEmoji(icon: WeatherIconType) {
 
 function WeatherMarker({ point }: { point: WeatherMapPoint }) {
   return (
-    <div className="absolute -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.12)]" style={{ left: point.left, top: point.top }}>
+    <div
+      className="absolute -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
+      style={{ left: point.left, top: point.top }}
+    >
       <div className="flex flex-col items-center gap-1">
         <div className="grid h-5 w-5 place-content-center text-sm" aria-hidden="true">
           {getWeatherEmoji(point.icon)}
@@ -58,6 +61,7 @@ export interface MapCardProps extends HTMLAttributes<HTMLElement> {
   variant?: 'weather' | 'locations';
   weatherPoints?: WeatherMapPoint[];
   locationPoints?: MapPin[];
+  onWeatherClick?: () => void;
 }
 
 export function MapCard({
@@ -67,6 +71,7 @@ export function MapCard({
   weatherPoints: weatherPointsProp,
   locationPoints: locationPointsProp,
   className,
+  onWeatherClick,
   ...props
 }: MapCardProps) {
   const title = getMappedValue<string>(data, 'title', fieldMap) ?? '';
@@ -109,12 +114,25 @@ export function MapCard({
           {value !== undefined ? <p className="mt-1 text-sm text-[#64748B]">{String(value)}</p> : null}
         </div>
 
-        <button type="button" className="text-right text-xs font-medium leading-3.75 text-[#75C79E]">
+        <button
+          type="button"
+          className={cx('text-right text-xs font-medium leading-3.75 text-[#75C79E]', isWeather && 'cursor-pointer hover:text-[#6ab080] transition')}
+          onClick={() => isWeather && onWeatherClick?.()}
+        >
           {actionLabel}
         </button>
       </header>
 
-      <div className="relative mt-4 h-52.5 overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]">
+      <div
+        className={cx(
+          'relative mt-4 h-52.5 overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]',
+          isWeather && 'cursor-pointer transition hover:opacity-90',
+        )}
+        onClick={() => isWeather && onWeatherClick?.()}
+        role={isWeather ? 'button' : undefined}
+        tabIndex={isWeather ? 0 : undefined}
+        onKeyDown={(e) => isWeather && (e.key === 'Enter' || e.key === ' ') && onWeatherClick?.()}
+      >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.7),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.45),transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(28deg,transparent_0_18px,rgba(255,255,255,0.45)_18px_22px,transparent_22px_52px),repeating-linear-gradient(-34deg,transparent_0_24px,rgba(255,255,255,0.4)_24px_28px,transparent_28px_58px)] opacity-70" />
         <div className="absolute left-4.5 top-7.5 h-14 w-17.5 rounded-2xl bg-[#CDECCF]/70" />
@@ -122,7 +140,12 @@ export function MapCard({
         <div className="absolute left-18.5 bottom-4.5 h-10 w-19.5 rounded-[14px] bg-[#CDECCF]/60" />
 
         {isWeather
-          ? weatherPoints.map((point, index) => <WeatherMarker key={`${point.left}-${point.top}-${index}`} point={point} />)
+          ? weatherPoints.map((point, index) => (
+              <WeatherMarker
+                key={`${point.left}-${point.top}-${index}`}
+                point={point}
+              />
+            ))
           : locationPoints.map((pin, index) => (
               <div
                 key={`${pin.left}-${pin.top}-${index}`}
