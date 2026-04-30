@@ -16,6 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
+    variant: 'default',
     data: {
       title: 'Chat de soporte',
       value: '3 conversaciones activas',
@@ -25,6 +26,34 @@ export const Default: Story = {
         { sender: 'Laura', text: 'Necesito actualizar mi pedido', time: '10:25' },
         { sender: 'Diego', text: 'Confirmado, gracias', time: '10:27' },
       ],
+    },
+  },
+};
+
+export const Alert: Story = {
+  args: {
+    variant: 'alert',
+    data: {
+      title: 'Incidentes de stock',
+      value: '4 conversaciones urgentes',
+      description: 'Mensajes pendientes con prioridad alta',
+      trend: 'Urgente',
+      messages: [
+        { sender: 'Bodega', text: 'Producto critico agotado', time: '11:10' },
+        { sender: 'Ventas', text: 'Cliente esperando confirmacion', time: '11:12' },
+      ],
+    },
+  },
+};
+
+export const StockStatus: Story = {
+  args: {
+    variant: 'stockStatus',
+    data: {
+      title: 'Estado de Stock',
+      value: 'En Stock',
+      rightLabel: 'Disponible',
+      rightValue: 85,
     },
   },
 };

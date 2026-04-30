@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import CustomButton from './CustomButton';
 
 const meta = {
-  title: 'Example/CustomButton',
+  title: 'Components/CustomButton',
   component: CustomButton,
   tags: ['autodocs'],
   argTypes: {
