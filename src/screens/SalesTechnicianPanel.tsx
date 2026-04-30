@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 import { MetricCard } from '../components/MetricCard';
 import { MapCard } from '../components/MapCard';
@@ -11,6 +12,7 @@ import { MetricMoneyIcon } from '../components/Icons/MetricMoneyIcon';
 import { InventoryGlyph } from '../components/Icons/InventoryGlyph';
 import { SalesChartCard } from '../components/SalesChartCard/SalesChartCard';
 import { WarningMetricCard } from '../components/WarningMetricCard/WarningMetricCard';
+import { WeatherModal } from '../components/WeatherModal';
 import useAuthStore from '../services/Contexts/useAuthStore';
 
 type MetricCardData = {
@@ -96,6 +98,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
 function SalesTechnicianPanel() {
   const { user } = useAuthStore();
   const userName = user?.name ?? 'Técnico';
+  const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
 
   return (
     <div className="min-h-full bg-[#F6F7F7] text-[#0F172A]">
@@ -164,6 +167,7 @@ function SalesTechnicianPanel() {
               description: 'Precipitaciones sur',
             }}
             variant="weather"
+            onWeatherClick={() => setIsWeatherModalOpen(true)}
             className="h-98.25 max-w-none"
           />
         </section>
@@ -229,6 +233,8 @@ function SalesTechnicianPanel() {
               Ver Inventario Completo
             </button>
           </div>
+
+        <WeatherModal isOpen={isWeatherModalOpen} onClose={() => setIsWeatherModalOpen(false)} />
         </section>
       </main>
     </div>
