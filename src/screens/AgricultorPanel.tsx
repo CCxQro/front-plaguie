@@ -4,7 +4,7 @@ function AgricultorPanel() {
   const { user } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center font-sans">
       <div className="text-center space-y-4">
         <div className="w-16 h-16 mx-auto bg-[#DCFCE7] rounded-full flex items-center justify-center">
           <span className="text-3xl">🌱</span>

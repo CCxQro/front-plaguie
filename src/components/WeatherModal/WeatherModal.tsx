@@ -53,6 +53,7 @@ export function WeatherModal({ isOpen, onClose }: WeatherModalProps) {
       aria-modal="true"
       role="dialog"
       aria-labelledby="weather-modal-title"
+      data-testid="weather-modal"
     >
       <div className="flex max-h-[90vh] min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         {/* Header */}

@@ -35,14 +35,14 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
           'w-full max-w-[228px] rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
           className,
         )}
+        data-testid="metric-card"
         {...props}
       >
         <p className="text-xs font-medium uppercase tracking-wide text-[#64748B]">{title}</p>
         <p className="mt-2 text-2xl font-bold leading-8 text-[#0F172A]">{String(value)}</p>
         <div className="mt-3 h-1.5 w-full rounded-full bg-[#F1F5F9]">
           <div
-            className="h-1.5 rounded-full bg-[#75C79E]"
-            style={{ width: `${safeProgress}%` }}
+            className={`h-1.5 rounded-full bg-[#75C79E] w-(--progress) [--progress:${safeProgress}%]`}
             aria-hidden="true"
           />
         </div>
@@ -58,6 +58,7 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
           'w-full max-w-[346px] rounded-[14px] border border-[#FFD6A8] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
           className,
         )}
+        data-testid="metric-card"
         {...props}
       >
         <div className="flex items-center gap-3">
@@ -78,6 +79,7 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
           'w-full max-w-[266px] rounded-[14px] border border-[#E5E7EB] bg-white px-6 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]',
           className,
         )}
+        data-testid="metric-card"
         {...props}
       >
         <div className="flex items-center gap-3">
@@ -100,6 +102,7 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
           : 'border border-[#E2E8F0] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
         className,
       )}
+      data-testid="metric-card"
       {...props}
     >
       <header className="flex items-start justify-between gap-3">

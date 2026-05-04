@@ -35,14 +35,16 @@ function WeatherModalDemo() {
   );
 }
 
+const STUB_ARGS = { isOpen: true, onClose: () => {} };
+
 export const Default: Story = {
+  args: STUB_ARGS,
   render: () => <WeatherModalDemo />,
-  parameters: {
-    layout: 'fullscreen',
-  },
+  parameters: { layout: 'fullscreen' },
 };
 
 export const OpenedState: Story = {
+  args: STUB_ARGS,
   render: () => {
     const [isOpen] = useState(true);
     return (
@@ -51,12 +53,11 @@ export const OpenedState: Story = {
       </div>
     );
   },
-  parameters: {
-    layout: 'fullscreen',
-  },
+  parameters: { layout: 'fullscreen' },
 };
 
 export const ClosedState: Story = {
+  args: { isOpen: false, onClose: () => {} },
   render: () => {
     const [isOpen] = useState(false);
     return (
@@ -68,7 +69,5 @@ export const ClosedState: Story = {
       </div>
     );
   },
-  parameters: {
-    layout: 'fullscreen',
-  },
+  parameters: { layout: 'fullscreen' },
 };
