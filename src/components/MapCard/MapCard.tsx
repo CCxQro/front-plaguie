@@ -62,6 +62,7 @@ export interface MapCardProps extends HTMLAttributes<HTMLElement> {
   weatherPoints?: WeatherMapPoint[];
   locationPoints?: MapPin[];
   onWeatherClick?: () => void;
+  onLocationsClick?: () => void;
 }
 
 export function MapCard({
@@ -72,6 +73,7 @@ export function MapCard({
   locationPoints: locationPointsProp,
   className,
   onWeatherClick,
+  onLocationsClick,
   ...props
 }: MapCardProps) {
   const title = getMappedValue<string>(data, 'title', fieldMap) ?? '';
@@ -99,6 +101,8 @@ export function MapCard({
     ];
 
   const isWeather = variant === 'weather';
+  const isLocations = variant === 'locations';
+  const handleClick = isWeather ? onWeatherClick : isLocations ? onLocationsClick : undefined;
 
   return (
     <section
@@ -116,8 +120,8 @@ export function MapCard({
 
         <button
           type="button"
-          className={cx('text-right text-xs font-medium leading-3.75 text-[#75C79E]', isWeather && 'cursor-pointer hover:text-[#6ab080] transition')}
-          onClick={() => isWeather && onWeatherClick?.()}
+          className={cx('text-right text-xs font-medium leading-3.75 text-[#75C79E]', !!handleClick && 'cursor-pointer hover:text-[#6ab080] transition')}
+          onClick={() => handleClick?.()}
         >
           {actionLabel}
         </button>
@@ -126,12 +130,12 @@ export function MapCard({
       <div
         className={cx(
           'relative mt-4 h-52.5 overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]',
-          isWeather && 'cursor-pointer transition hover:opacity-90',
+          !!handleClick && 'cursor-pointer transition hover:opacity-90',
         )}
-        onClick={() => isWeather && onWeatherClick?.()}
-        role={isWeather ? 'button' : undefined}
-        tabIndex={isWeather ? 0 : undefined}
-        onKeyDown={(e) => isWeather && (e.key === 'Enter' || e.key === ' ') && onWeatherClick?.()}
+        onClick={() => handleClick?.()}
+        role={handleClick ? 'button' : undefined}
+        tabIndex={handleClick ? 0 : undefined}
+        onKeyDown={(e) => handleClick && (e.key === 'Enter' || e.key === ' ') && handleClick()}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.7),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.45),transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(28deg,transparent_0_18px,rgba(255,255,255,0.45)_18px_22px,transparent_22px_52px),repeating-linear-gradient(-34deg,transparent_0_24px,rgba(255,255,255,0.4)_24px_28px,transparent_28px_58px)] opacity-70" />
