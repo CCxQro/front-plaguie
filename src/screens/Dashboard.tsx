@@ -39,7 +39,6 @@ function getInitials(name: string) {
 
 function Dashboard() {
   const user = useAuthStore((state) => state.user);
-  const token = useAuthStore((state) => state.token);
   const [headerSearch, setHeaderSearch] = useState('');
   const [usersSearch, setUsersSearch] = useState('');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -66,15 +65,9 @@ function Dashboard() {
 
   useEffect(() => {
     const loadUsers = async () => {
-      if (!token) {
-        setErrorMessage('Sesión inválida. Inicia sesión nuevamente.');
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setErrorMessage(null);
-        const data = await getUsers(token);
+        const data = await getUsers();
         setUsers(data);
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : 'No se pudo cargar usuarios');
@@ -84,7 +77,7 @@ function Dashboard() {
     };
 
     void loadUsers();
-  }, [token]);
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const query = usersSearch.trim().toLowerCase();
@@ -93,13 +86,12 @@ function Dashboard() {
   }, [usersSearch, users]);
 
   const handleRoleChange = async (target: AdminUser, roleLabel: UserRoleLabel) => {
-    if (!token) return;
     const nextRoleId = roleLabelToRoleId(roleLabel);
     if (target.roleId === nextRoleId) return;
 
     setIsMutatingUserId(target.userId);
     try {
-      const updated = await updateUserById(target.userId, { roleId: nextRoleId }, token);
+      const updated = await updateUserById(target.userId, { roleId: nextRoleId });
       setUsers((prev) => prev.map((item) => (item.userId === updated.userId ? updated : item)));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'No se pudo actualizar el rol');
@@ -119,7 +111,6 @@ function Dashboard() {
   };
 
   const handleCreateUser = async () => {
-    if (!token) return;
     if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password.trim()) {
       setErrorMessage('Nombre, correo y contraseña son obligatorios');
       return;
@@ -134,22 +125,17 @@ function Dashboard() {
 
     try {
       setErrorMessage(null);
-      const created = await registerUser(payload, token);
+      const created = await registerUser(payload);
       setUsers((prev) => [created, ...prev]);
       setIsCreatingUser(false);
-      setCreateForm({
-        name: '',
-        email: '',
-        password: '',
-        roleId: 3,
-      });
+      setCreateForm({ name: '', email: '', password: '', roleId: 3 });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'No se pudo crear usuario');
     }
   };
 
   const handleSaveEditUser = async () => {
-    if (!token || !editingUser) return;
+    if (!editingUser) return;
     if (!editForm.name.trim() || !editForm.email.trim()) {
       setErrorMessage('Nombre y correo son obligatorios');
       return;
@@ -158,16 +144,12 @@ function Dashboard() {
     setIsMutatingUserId(editingUser.userId);
     try {
       setErrorMessage(null);
-      const updated = await updateUserById(
-        editingUser.userId,
-        {
-          name: editForm.name.trim(),
-          email: editForm.email.trim(),
-          roleId: editForm.roleId,
-          isActive: editForm.isActive,
-        },
-        token,
-      );
+      const updated = await updateUserById(editingUser.userId, {
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        roleId: editForm.roleId,
+        isActive: editForm.isActive,
+      });
       setUsers((prev) => prev.map((item) => (item.userId === updated.userId ? updated : item)));
       setEditingUser(null);
     } catch (error) {
@@ -178,11 +160,11 @@ function Dashboard() {
   };
 
   const handleConfirmAction = async () => {
-    if (!token || !confirmTarget) return;
+    if (!confirmTarget) return;
     setIsMutatingUserId(confirmTarget.userId);
     try {
       setErrorMessage(null);
-      await deactivateUserById(confirmTarget.userId, token);
+      await deactivateUserById(confirmTarget.userId);
       setUsers((prev) =>
         prev.map((item) =>
           item.userId === confirmTarget.userId ? { ...item, isActive: false } : item,
@@ -197,14 +179,13 @@ function Dashboard() {
   };
 
   const handleToggleActive = async (target: AdminUser) => {
-    if (!token) return;
     setIsMutatingUserId(target.userId);
     try {
       if (target.isActive) {
-        await deactivateUserById(target.userId, token);
+        await deactivateUserById(target.userId);
         setUsers((prev) => prev.map((item) => (item.userId === target.userId ? { ...item, isActive: false } : item)));
       } else {
-        const updated = await updateUserById(target.userId, { isActive: true }, token);
+        const updated = await updateUserById(target.userId, { isActive: true });
         setUsers((prev) => prev.map((item) => (item.userId === updated.userId ? updated : item)));
       }
     } catch (error) {
