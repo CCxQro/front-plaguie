@@ -66,6 +66,7 @@ export function PlagueAlertsModal({ isOpen, onClose, onVerMapaCompleto }: Plague
       aria-modal="true"
       role="dialog"
       aria-labelledby="plague-alerts-modal-title"
+      data-testid="plague-alerts-modal"
     >
       <div className="flex max-h-[90vh] min-h-0 w-full max-w-[700px] flex-col overflow-hidden rounded-[14px] bg-white shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)]">
         {/* Header */}

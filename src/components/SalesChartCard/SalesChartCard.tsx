@@ -35,6 +35,7 @@ export function SalesChartCard({
       className={`flex h-98.25 flex-col rounded-xl border border-[#E2E8F0] bg-white p-px shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${
         className || ''
       }`}
+      data-testid="sales-chart-card"
       {...props}
     >
       <div className="flex h-full flex-col rounded-[11px] bg-white px-6.25 py-6.25">
@@ -54,8 +55,7 @@ export function SalesChartCard({
           {salesData.map((day) => (
             <div key={day.label} className="flex flex-1 items-end">
               <div
-                className="w-full rounded-t-lg"
-                style={{ height: `${day.height}px`, backgroundColor: day.tone }}
+                className={`w-full rounded-t-lg h-(--bar-h) bg-(--bar-color) [--bar-h:${day.height}px] [--bar-color:${day.tone}]`}
                 aria-hidden="true"
               />
             </div>
