@@ -62,7 +62,7 @@ export function PlagueAlertCard({
   const severidadTexto = etiquetaSeveridad ?? styles.defaultLabel;
 
   return (
-    <article className={cx('rounded-[14px] border px-4.25 py-4.25', styles.card, className)} aria-label={titulo}>
+    <article className={cx('rounded-[14px] border px-4.25 py-4.25', styles.card, className)} aria-label={titulo} data-testid="plague-alert-card">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <PlagueAlertCardIcon icon="alerta" className={cx('mt-0.5 h-5 w-5 shrink-0', styles.alertIcon)} />
