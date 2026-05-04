@@ -25,6 +25,7 @@ export function WarningMetricCard({
       className={`flex h-40.5 flex-col justify-between rounded-xl border border-[#E2E8F0] bg-white px-6.25 py-6.25 shadow-[0_1px_2px_rgba(0,0,0,0.05)] ${
         className || ''
       }`}
+      data-testid="warning-metric-card"
       {...props}
     >
       <div className="flex items-start justify-between gap-3">
@@ -33,8 +34,7 @@ export function WarningMetricCard({
         </div>
 
         <span
-          className="rounded-full px-3 py-1 text-[12px] leading-4.5"
-          style={{ backgroundColor: statusBgColor, color: statusTextColor }}
+          className={`rounded-full px-3 py-1 text-[12px] leading-4.5 bg-(--status-bg) text-(--status-color) [--status-bg:${statusBgColor}] [--status-color:${statusTextColor}]`}
         >
           {status}
         </span>

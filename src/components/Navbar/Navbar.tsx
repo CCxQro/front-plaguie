@@ -1,5 +1,5 @@
 import React from 'react';
-import CustomButton from '../button/CustomButton';
+import CustomButton from '../Button/CustomButton';
 
 type NavLink = {
   title: string;

@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface CategoryBadgeProps {
   label: string;
   color: string;
@@ -9,9 +7,6 @@ interface CategoryBadgeProps {
   height?: string;
 }
 
-/**
- * Converts a hex color string to an rgba string with the given alpha.
- */
 function hexToRgba(hex: string, alpha: number): string {
   const cleanHex = hex.replace('#', '');
   const r = parseInt(cleanHex.substring(0, 2), 16);
@@ -20,23 +15,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const CategoryBadge: React.FC<CategoryBadgeProps> = ({
-  label,
-  color,
-  width = 'w-auto',
-  height = 'h-6',
-}) => {
+export default function CategoryBadge({ label, color, width = 'w-auto', height = 'h-6' }: CategoryBadgeProps) {
+  const bg = hexToRgba(color, 0.12);
   return (
     <span
-      className={`inline-flex items-center justify-center px-3 ${width} ${height} rounded-full font-inter font-bold text-xs leading-4 whitespace-nowrap`}
-      style={{
-        backgroundColor: hexToRgba(color, 0.12),
-        color: color,
-      }}
+      className={`inline-flex items-center justify-center px-3 ${width} ${height} rounded-full font-inter font-bold text-xs leading-4 whitespace-nowrap text-(--badge-color) bg-(--badge-bg) [--badge-color:${color}] [--badge-bg:${bg}]`}
+      data-testid="category-badge"
     >
       {label}
     </span>
   );
-};
-
-export default CategoryBadge;
+}
