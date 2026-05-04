@@ -30,8 +30,7 @@ export const Default: Story = {
     ubicacion: 'Monterrey, N.L.',
     tiempo: 'Hace 15 min',
     tipoPlaga: 'Langosta',
-    hectareas: '50 hectareas',
-    etiquetaSeveridad: 'CRITICO',
+    hectareas: '50 hectáreas',
     className: 'w-[644px]',
   } satisfies PlagueAlertCardProps,
 };
@@ -39,12 +38,11 @@ export const Default: Story = {
 export const Advertencia: Story = {
   args: {
     variant: 'advertencia',
-    titulo: 'Infestacion de Pulgon',
-    ubicacion: 'Ciudad de Mexico',
+    titulo: 'Infestación de Pulgón',
+    ubicacion: 'Ciudad de México',
     tiempo: 'Hace 2 horas',
-    tipoPlaga: 'Pulgon',
-    hectareas: '15 hectareas',
-    etiquetaSeveridad: 'ADVERTENCIA',
+    tipoPlaga: 'Pulgón',
+    hectareas: '15 hectáreas',
     className: 'w-[644px]',
   } satisfies PlagueAlertCardProps,
 };
@@ -56,13 +54,20 @@ export const Informacion: Story = {
     ubicacion: 'Guadalajara, Jal.',
     tiempo: 'Hace 4 horas',
     tipoPlaga: 'Mosca Blanca',
-    hectareas: '8 hectareas',
-    etiquetaSeveridad: 'INFORMACION',
+    hectareas: '8 hectáreas',
     className: 'w-[644px]',
   } satisfies PlagueAlertCardProps,
 };
 
 export const ListaVariantes: Story = {
+  args: {
+    variant: 'critico',
+    titulo: '',
+    ubicacion: '',
+    tiempo: '',
+    tipoPlaga: '',
+    hectareas: '',
+  },
   render: () => (
     <div className="w-161 space-y-4">
       <PlagueAlertCard
@@ -71,8 +76,7 @@ export const ListaVariantes: Story = {
         ubicacion="Monterrey, N.L."
         tiempo="Hace 15 min"
         tipoPlaga="Langosta"
-        hectareas="50 hectareas"
-        etiquetaSeveridad="CRITICO"
+        hectareas="50 hectáreas"
       />
 
       <PlagueAlertCard
@@ -81,28 +85,25 @@ export const ListaVariantes: Story = {
         ubicacion="Puebla, Pue."
         tiempo="Hace 30 min"
         tipoPlaga="Gusano Cogollero"
-        hectareas="35 hectareas"
-        etiquetaSeveridad="CRITICO"
+        hectareas="35 hectáreas"
       />
 
       <PlagueAlertCard
         variant="advertencia"
-        titulo="Infestacion de Pulgon"
-        ubicacion="Ciudad de Mexico"
+        titulo="Infestación de Pulgón"
+        ubicacion="Ciudad de México"
         tiempo="Hace 2 horas"
-        tipoPlaga="Pulgon"
-        hectareas="15 hectareas"
-        etiquetaSeveridad="ADVERTENCIA"
+        tipoPlaga="Pulgón"
+        hectareas="15 hectáreas"
       />
 
       <PlagueAlertCard
         variant="advertencia"
         titulo="Trips en Cultivos Protegidos"
         ubicacion="Tijuana, B.C."
-        tiempo="Hace 1 dia"
+        tiempo="Hace 1 día"
         tipoPlaga="Trips"
-        hectareas="12 hectareas"
-        etiquetaSeveridad="ADVERTENCIA"
+        hectareas="12 hectáreas"
       />
 
       <PlagueAlertCard
@@ -111,8 +112,7 @@ export const ListaVariantes: Story = {
         ubicacion="Guadalajara, Jal."
         tiempo="Hace 4 horas"
         tipoPlaga="Mosca Blanca"
-        hectareas="8 hectareas"
-        etiquetaSeveridad="INFORMACION"
+        hectareas="8 hectáreas"
       />
     </div>
   ),

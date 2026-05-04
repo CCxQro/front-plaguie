@@ -13,6 +13,7 @@ import { InventoryGlyph } from '../components/Icons/InventoryGlyph';
 import { SalesChartCard } from '../components/SalesChartCard/SalesChartCard';
 import { WarningMetricCard } from '../components/WarningMetricCard/WarningMetricCard';
 import { WeatherModal } from '../components/WeatherModal';
+import { PlagueAlertsModal } from '../components/PlagueAlertsModal';
 import useAuthStore from '../services/Contexts/useAuthStore';
 
 type MetricCardData = {
@@ -99,6 +100,7 @@ function SalesTechnicianPanel() {
   const { user } = useAuthStore();
   const userName = user?.name ?? 'Técnico';
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
+  const [isPlagueAlertsModalOpen, setIsPlagueAlertsModalOpen] = useState(false);
 
   return (
     <div className="min-h-full bg-[#F6F7F7] text-[#0F172A]">
@@ -156,6 +158,7 @@ function SalesTechnicianPanel() {
               description: '5 alertas críticas',
             }}
             variant="locations"
+            onLocationsClick={() => setIsPlagueAlertsModalOpen(true)}
             className="h-98.25 max-w-none"
           />
 
@@ -237,6 +240,8 @@ function SalesTechnicianPanel() {
         <WeatherModal isOpen={isWeatherModalOpen} onClose={() => setIsWeatherModalOpen(false)} />
         </section>
       </main>
+
+      <PlagueAlertsModal isOpen={isPlagueAlertsModalOpen} onClose={() => setIsPlagueAlertsModalOpen(false)} />
     </div>
   );
 }
