@@ -1,5 +1,5 @@
 import { Navigate } from 'react-router-dom';
-import { getDefaultRoute } from '../ProtectedRoute/ProtectedRoute';
+import { getDefaultRoute } from '../ProtectedRoute/routes';
 import useAuthStore from '../../services/Contexts/useAuthStore';
 
 export function DefaultRedirect() {
