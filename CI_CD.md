@@ -6,15 +6,65 @@ This document explains the continuous integration and delivery setup for the Pla
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Pipeline Steps](#pipeline-steps)
-3. [Required Secrets in Secret Manager](#required-secrets-in-secret-manager)
-4. [Cloud Build Substitutions](#cloud-build-substitutions)
+1. [Pre-commit Hook (run locally before pushing)](#pre-commit-hook-run-locally-before-pushing)
+2. [Overview](#overview)
+3. [Pipeline Steps](#pipeline-steps)
+4. [Required Secrets in Secret Manager](#required-secrets-in-secret-manager)
+5. [Cloud Build Substitutions](#cloud-build-substitutions)
 5. [Files in This Repo](#files-in-this-repo)
 6. [How to Set Up From Scratch](#how-to-set-up-from-scratch)
 7. [How to Trigger a Deployment](#how-to-trigger-a-deployment)
 8. [Why VITE_* Variables Are Baked Into the Build](#why-vite_-variables-are-baked-into-the-build)
 9. [Docker Image Details](#docker-image-details)
+
+---
+
+## Pre-commit Hook (run locally before pushing)
+
+A **Husky** pre-commit hook is included in the repo. It runs automatically every time you run `git commit` and blocks the commit if either check fails.
+
+The hook runs two checks in order:
+
+```
+git commit
+  └─ 1. npm run lint   ← ESLint — blocks if any error is found
+  └─ 2. npm test       ← Vitest unit tests — blocks if any test fails
+```
+
+### Activation (one-time per machine)
+
+The hook activates automatically when you install dependencies:
+
+```bash
+npm install
+```
+
+Husky's `prepare` script registers the hook with Git. Nothing else is needed.
+
+### If the hook blocks your commit
+
+Read the error output — it shows exactly which file and rule failed. Fix the issue, stage your changes again, and retry:
+
+```bash
+# Example: after fixing an ESLint error
+git add src/components/MyComponent/MyComponent.tsx
+git commit -m "fix: ..."
+```
+
+### Skip the hook in an emergency (not recommended)
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+Only use this if you are absolutely certain the CI pipeline will still pass. Cloud Build runs the same lint and test checks — skipping locally just moves the failure to the cloud.
+
+### Files involved
+
+| File | Purpose |
+|---|---|
+| `.husky/pre-commit` | Hook script — runs `npm run lint` then `npm test` |
+| `package.json` → `"prepare": "husky"` | Auto-activates the hook on `npm install` for all teammates |
 
 ---
 

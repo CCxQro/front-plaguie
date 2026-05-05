@@ -5,7 +5,7 @@ import CustomButton from '../components/Button/CustomButton';
 import CheckButton from '../components/CheckButton/CheckButton';
 import { login } from '../services/auth/login';
 import useAuthStore from '../services/Contexts/useAuthStore';
-import { getDefaultRoute } from '../components/ProtectedRoute/ProtectedRoute';
+import { getDefaultRoute } from '../components/ProtectedRoute/routes';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarIcon } from './SidebarIcons';
 import type { SidebarItem } from './Sidebar';
+import { DEFAULT_SIDEBAR_ITEMS } from './defaultSidebarItems';
 
 export interface SidebarClaroProps {
   appName: string;
@@ -17,14 +18,6 @@ export interface SidebarClaroProps {
   onFooterActionClick?: () => void;
   className?: string;
 }
-
-export const DEFAULT_SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: 'inicio', label: 'Dashboard', icon: 'dashboard', href: '/sales-technician/inicio' },
-  { id: 'ventas', label: 'Ventas', icon: 'inventario', href: '/sales-technician/ventas' },
-  { id: 'clientes', label: 'Clientes', icon: 'clientes', href: '/sales-technician/clientes' },
-  { id: 'productos', label: 'Productos', icon: 'cubo', href: '/sales-technician/productos' },
-  { id: 'reportes', label: 'Reportes', icon: 'dashboards', href: '/sales-technician/reportes' },
-];
 
 export function SidebarClaro({
   appName,
