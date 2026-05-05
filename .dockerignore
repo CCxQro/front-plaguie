@@ -1,0 +1,38 @@
+# The Docker image only needs dist/ and nginx.conf.
+# Everything else is excluded to keep the build context small and fast.
+
+node_modules/
+src/
+.storybook/
+cypress/
+public/
+
+# Config files not needed at runtime
+*.config.ts
+*.config.js
+tsconfig*.json
+eslint.config.js
+cypress.config.ts
+vitest.shims.d.ts
+
+# Package files (deps are already installed in Cloud Build)
+package.json
+package-lock.json
+
+# Secrets and local env — never send to Docker daemon
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+CLAUDE.md
+TESTING.md
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
