@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InputField from '../components/InputField/InputField';
-import CustomButton from '../components/button/CustomButton';
+import CustomButton from '../components/Button/CustomButton';
 import CheckButton from '../components/CheckButton/CheckButton';
 import { login } from '../services/auth/login';
 import useAuthStore from '../services/Contexts/useAuthStore';
@@ -94,7 +94,7 @@ const Login: React.FC = () => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" data-testid="login-form">
             {/* Email */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-[#334155]">

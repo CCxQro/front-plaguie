@@ -30,21 +30,21 @@ const VARIANT_STYLES: Record<
     alertIcon: 'text-[#FB2C36]',
     badge: 'bg-[#FFE2E2]',
     badgeText: 'text-[#C10007]',
-    defaultLabel: 'CRITICO',
+    defaultLabel: 'Crítico',
   },
   advertencia: {
-    card: 'border-[#FFDDB0] bg-[#FFFAF3]',
+    card: 'border-[#FFD6A8] bg-[#FFF7ED]',
     alertIcon: 'text-[#FF6900]',
-    badge: 'bg-[#FFEAD2]',
-    badgeText: 'text-[#D94800]',
-    defaultLabel: 'ADVERTENCIA',
+    badge: 'bg-[#FFEDD4]',
+    badgeText: 'text-[#CA3500]',
+    defaultLabel: 'Advertencia',
   },
   informacion: {
-    card: 'border-[#BFD8FF] bg-[#EFF6FF]',
-    alertIcon: 'text-[#2F6FFF]',
-    badge: 'bg-[#DCEAFE]',
-    badgeText: 'text-[#1D4ED8]',
-    defaultLabel: 'INFORMACION',
+    card: 'border-[#BEDBFF] bg-[#EFF6FF]',
+    alertIcon: 'text-[#2B7FFF]',
+    badge: 'bg-[#DBEAFE]',
+    badgeText: 'text-[#1447E6]',
+    defaultLabel: 'Información',
   },
 };
 
@@ -62,7 +62,7 @@ export function PlagueAlertCard({
   const severidadTexto = etiquetaSeveridad ?? styles.defaultLabel;
 
   return (
-    <article className={cx('rounded-[14px] border px-4.25 py-4.25', styles.card, className)} aria-label={titulo}>
+    <article className={cx('rounded-[14px] border px-4.25 py-4.25', styles.card, className)} aria-label={titulo} data-testid="plague-alert-card">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <PlagueAlertCardIcon icon="alerta" className={cx('mt-0.5 h-5 w-5 shrink-0', styles.alertIcon)} />

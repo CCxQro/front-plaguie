@@ -8,7 +8,7 @@ const cx = (...classes: Array<string | false | null | undefined>) =>
 
 function LocationPin({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 20 24" aria-hidden="true" className="h-5 w-5" style={{ color }}>
+    <svg viewBox="0 0 20 24" aria-hidden="true" className={`h-5 w-5 text-(--pin-color) [--pin-color:${color}]`}>
       <path
         fill="currentColor"
         d="M10 0C5.4 0 1.66 3.7 1.66 8.25 1.66 14.5 10 24 10 24s8.34-9.5 8.34-15.75C18.34 3.7 14.6 0 10 0Zm0 11.33a3.08 3.08 0 1 1 0-6.16 3.08 3.08 0 0 1 0 6.16Z"
@@ -37,8 +37,7 @@ function getWeatherEmoji(icon: WeatherIconType) {
 function WeatherMarker({ point }: { point: WeatherMapPoint }) {
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.12)]"
-      style={{ left: point.left, top: point.top }}
+      className={`absolute -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.12)] left-(--wx) top-(--wy) [--wx:${point.left}] [--wy:${point.top}]`}
     >
       <div className="flex flex-col items-center gap-1">
         <div className="grid h-5 w-5 place-content-center text-sm" aria-hidden="true">
@@ -62,6 +61,7 @@ export interface MapCardProps extends HTMLAttributes<HTMLElement> {
   weatherPoints?: WeatherMapPoint[];
   locationPoints?: MapPin[];
   onWeatherClick?: () => void;
+  onLocationsClick?: () => void;
 }
 
 export function MapCard({
@@ -72,6 +72,7 @@ export function MapCard({
   locationPoints: locationPointsProp,
   className,
   onWeatherClick,
+  onLocationsClick,
   ...props
 }: MapCardProps) {
   const title = getMappedValue<string>(data, 'title', fieldMap) ?? '';
@@ -99,6 +100,8 @@ export function MapCard({
     ];
 
   const isWeather = variant === 'weather';
+  const isLocations = variant === 'locations';
+  const handleClick = isWeather ? onWeatherClick : isLocations ? onLocationsClick : undefined;
 
   return (
     <section
@@ -106,6 +109,7 @@ export function MapCard({
         'w-full max-w-[262px] rounded-xl border border-[#E2E8F0] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]',
         className,
       )}
+      data-testid="map-card"
       {...props}
     >
       <header className="flex items-start justify-between gap-4">
@@ -116,8 +120,8 @@ export function MapCard({
 
         <button
           type="button"
-          className={cx('text-right text-xs font-medium leading-3.75 text-[#75C79E]', isWeather && 'cursor-pointer hover:text-[#6ab080] transition')}
-          onClick={() => isWeather && onWeatherClick?.()}
+          className={cx('text-right text-xs font-medium leading-3.75 text-[#75C79E]', !!handleClick && 'cursor-pointer hover:text-[#6ab080] transition')}
+          onClick={() => handleClick?.()}
         >
           {actionLabel}
         </button>
@@ -126,12 +130,12 @@ export function MapCard({
       <div
         className={cx(
           'relative mt-4 h-52.5 overflow-hidden rounded-lg border border-[#D7E1EA] bg-[#E7EEF3]',
-          isWeather && 'cursor-pointer transition hover:opacity-90',
+          !!handleClick && 'cursor-pointer transition hover:opacity-90',
         )}
-        onClick={() => isWeather && onWeatherClick?.()}
-        role={isWeather ? 'button' : undefined}
-        tabIndex={isWeather ? 0 : undefined}
-        onKeyDown={(e) => isWeather && (e.key === 'Enter' || e.key === ' ') && onWeatherClick?.()}
+        onClick={() => handleClick?.()}
+        role={handleClick ? 'button' : undefined}
+        tabIndex={handleClick ? 0 : undefined}
+        onKeyDown={(e) => handleClick && (e.key === 'Enter' || e.key === ' ') && handleClick()}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.7),transparent_45%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.45),transparent_42%),linear-gradient(135deg,#EAF1F6,#D8E4ED)]" />
         <div className="absolute inset-0 bg-[repeating-linear-gradient(28deg,transparent_0_18px,rgba(255,255,255,0.45)_18px_22px,transparent_22px_52px),repeating-linear-gradient(-34deg,transparent_0_24px,rgba(255,255,255,0.4)_24px_28px,transparent_28px_58px)] opacity-70" />
@@ -149,8 +153,7 @@ export function MapCard({
           : locationPoints.map((pin, index) => (
               <div
                 key={`${pin.left}-${pin.top}-${index}`}
-                className="absolute -translate-x-1/2 -translate-y-full"
-                style={{ left: pin.left, top: pin.top }}
+                className={`absolute -translate-x-1/2 -translate-y-full left-(--px) top-(--py) [--px:${pin.left}] [--py:${pin.top}]`}
               >
                 <LocationPin color={pin.color ?? '#EF4444'} />
               </div>

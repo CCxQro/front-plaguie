@@ -53,7 +53,7 @@ export function InventoryTableRow({ row, variant = 'completa', onView, onEdit, o
   const compact = variant === 'compacta';
 
   return (
-    <tr className={cx('border-b border-[#F1F5F9]', compact && 'h-18.5')}>
+    <tr className={cx('border-b border-[#F1F5F9]', compact && 'h-18.5')} data-testid="inventory-table-row">
       {!compact ? (
         <td className="px-6 py-4 align-middle">
           <div className="grid h-12 w-12 place-content-center overflow-hidden rounded-[10px] bg-[#F1F5F9]">
@@ -93,7 +93,7 @@ export function InventoryTableRow({ row, variant = 'completa', onView, onEdit, o
       <td className={cx('px-6 py-4 align-middle', compact ? 'min-w-55' : '')}>
         <div className={cx('flex items-center gap-3', compact && 'flex-col items-start gap-1')}>
           <div className={cx('h-2 overflow-hidden rounded-full bg-[#F1F5F9]', compact ? 'w-28.75' : 'w-28.75')}>
-            <div className={cx('h-2 rounded-full', stockStyles.bar)} style={{ width: `${fillWidth}%` }} />
+            <div className={cx('h-2 rounded-full w-(--fill)', stockStyles.bar, `[--fill:${fillWidth}%]`)} />
           </div>
           <span className="text-sm font-bold leading-5 text-[#0F172B]">{row.stock}</span>
         </div>
