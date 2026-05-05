@@ -1,18 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import useAuthStore from '../../services/Contexts/useAuthStore';
-
-/**
- * Maps each roleId to its default route.
- * Used for redirecting unauthorized (but authenticated) users.
- */
-const DEFAULT_ROUTES: Record<number, string> = {
-  1: '/app',
-  2: '/agricultor',
-  3: '/sales-technician',
-};
-
-export const getDefaultRoute = (roleId: number): string =>
-  DEFAULT_ROUTES[roleId] ?? '/login';
+import { getDefaultRoute } from './routes';
 
 interface ProtectedRouteProps {
   allowedRoles: number[];
