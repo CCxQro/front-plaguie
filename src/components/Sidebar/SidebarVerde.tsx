@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { SidebarHeader } from './SidebarHeader';
 import { SidebarIcon } from './SidebarIcons';
 import type { SidebarItem } from './Sidebar';
@@ -46,10 +47,13 @@ export function SidebarVerde({
       <nav className="flex-1 space-y-1 px-4 pt-6" aria-label="Navegacion principal">
         {items.map((item) => {
           const isActive = item.id === activeItemId;
+          const isLink = !!item.href;
+          const Component = isLink ? Link : 'button';
           return (
-            <button
+            <Component
               key={item.id}
-              type="button"
+              to={item.href as string}
+              type={isLink ? undefined : 'button'}
               onClick={() => onItemClick?.(item.id)}
               className={`flex h-11 w-full items-center gap-3 rounded-[10px] pl-4 text-left transition-colors ${
                 isActive
@@ -65,7 +69,7 @@ export function SidebarVerde({
               <span className="text-[14px] font-medium leading-5 tracking-[-0.15px]">
                 {item.label}
               </span>
-            </button>
+            </Component>
           );
         })}
       </nav>
