@@ -1,22 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Sidebar, type SidebarItem } from '../components/Sidebar/Sidebar';
 import { SearchIcon } from '../components/Icons/SearchIcon';
 import { BellIcon } from '../components/Icons/BellIcon';
 import { DataTableActionIcon } from '../components/DataTable/DataTableIcons';
-import useAuthStore from '../services/Contexts/useAuthStore';
 import { deactivateUserById, getUsers, registerUser, updateUserById } from '../services/admin/users';
 import type { AdminUser, RegisterUserPayload } from '../types/AdminUser';
 
 type UserRoleLabel = 'Administrador' | 'Agricultor' | 'Técnico Vendedor';
-
-const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'usuarios', label: 'Gestión de Usuarios', icon: 'usuarios' },
-  { id: 'inventario', label: 'Inventario Global', icon: 'cubo' },
-  { id: 'validacion', label: 'Validación de Registros', icon: 'validacion' },
-  { id: 'dashboards', label: 'Dashboards', icon: 'dashboards' },
-];
 
 function roleIdToLabel(roleId: number): UserRoleLabel {
   if (roleId === 1) return 'Administrador';
@@ -38,7 +28,6 @@ function getInitials(name: string) {
 }
 
 function Dashboard() {
-  const user = useAuthStore((state) => state.user);
   const [headerSearch, setHeaderSearch] = useState('');
   const [usersSearch, setUsersSearch] = useState('');
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -196,20 +185,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <Sidebar
-        variant="verde"
-        appName="Plaguie"
-        appSubtitle="Administrador"
-        roleLabel="Administrador"
-        items={SIDEBAR_ITEMS}
-        activeItemId="usuarios"
-        footerActionLabel="Cerrar Sesión"
-        userName={user?.name ?? 'Admin Plaguie'}
-        userDetail={user?.email ?? 'admin@plaguie.com'}
-        userInitials={getInitials(user?.name ?? 'Admin Plaguie')}
-      />
-
+    <>
       <div className="flex flex-1 flex-col bg-[#F9FAFB]">
         <header className="border-b border-[#E5E7EB] bg-white px-8 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -453,7 +429,7 @@ function Dashboard() {
           </div>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
