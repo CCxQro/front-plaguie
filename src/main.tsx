@@ -8,7 +8,7 @@ import Login from './screens/Login'
 import StatusPage from './screens/StatusPage'
 import AdminLayout from './screens/AdminLayout'
 import AdminOverviewPanel from './screens/AdminOverviewPanel'
-import Dashboard from './screens/Dashboard'
+import GestionUsuariosPanel from './screens/GestionUsuariosPanel'
 import InventarioPanel from './screens/InventarioPanel'
 import ValidacionPanel from './screens/ValidacionPanel'
 import DashboardsPanel from './screens/DashboardsPanel'
@@ -48,7 +48,7 @@ createRoot(document.getElementById('root')!).render(
           }>
             <Route index element={<Navigate to="usuarios" replace />} />
             <Route path="dashboard" element={<AdminOverviewPanel />} />
-            <Route path="usuarios" element={<Dashboard />} />
+            <Route path="usuarios" element={<GestionUsuariosPanel />} />
             <Route path="inventario" element={<InventarioPanel />} />
             <Route path="validacion" element={<ValidacionPanel />} />
             <Route path="dashboards" element={<DashboardsPanel />} />
