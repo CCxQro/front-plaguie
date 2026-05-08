@@ -1,8 +1,8 @@
 import { backendClient } from '../http/backendClient';
-import type { AdminUser, RegisterUserPayload, UpdateUserPayload } from '../../types/AdminUser';
+import type { AdminUser, RegisterUserPayload, UpdateUserPayload, UserListParams, UsersPage } from '../../types/AdminUser';
 
-export async function getUsers(): Promise<AdminUser[]> {
-  const { data } = await backendClient.get<AdminUser[]>('/api/users');
+export async function getUsers(params: UserListParams): Promise<UsersPage> {
+  const { data } = await backendClient.get<UsersPage>('/api/users', { params });
   return data;
 }
 

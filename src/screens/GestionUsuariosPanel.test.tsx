@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import GestionUsuariosPanel from './GestionUsuariosPanel';
-import type { AdminUser } from '../types/AdminUser';
+import type { AdminUser, UserListParams, UsersPage } from '../types/AdminUser';
 
 vi.mock('../services/admin/users', () => ({
   getUsers: vi.fn(),
@@ -46,6 +46,16 @@ const INACTIVE_USER: AdminUser = {
   isActive: false,
 };
 
+function makePage(content: AdminUser[], params?: Partial<UserListParams>): UsersPage {
+  return {
+    content,
+    totalElements: content.length,
+    totalPages: Math.max(1, Math.ceil(content.length / (params?.size ?? 10))),
+    page: params?.page ?? 0,
+    size: params?.size ?? 10,
+  };
+}
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -60,7 +70,23 @@ function createWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockGetUsers.mockResolvedValue([ACTIVE_USER, INACTIVE_USER]);
+  mockGetUsers.mockImplementation(async (params: UserListParams) => {
+    const all = [ACTIVE_USER, INACTIVE_USER];
+    const nameQ = params.name?.toLowerCase();
+    let results = all;
+    if (nameQ) {
+      results = results.filter(
+        (u) => u.name.toLowerCase().includes(nameQ) || u.email.toLowerCase().includes(nameQ),
+      );
+    }
+    if (params.roleId !== undefined) {
+      results = results.filter((u) => u.roleId === params.roleId);
+    }
+    if (params.isActive !== undefined) {
+      results = results.filter((u) => u.isActive === params.isActive);
+    }
+    return makePage(results, params);
+  });
 });
 
 describe('GestionUsuariosPanel', () => {
@@ -103,7 +129,9 @@ describe('GestionUsuariosPanel', () => {
     const searchInput = screen.getByTestId('users-search-input');
     await userEvent.type(searchInput, 'ana');
 
-    expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    });
     expect(screen.getByText('Ana García')).toBeInTheDocument();
     expect(screen.queryByText('Carlos López')).not.toBeInTheDocument();
   });
@@ -116,7 +144,9 @@ describe('GestionUsuariosPanel', () => {
 
     await userEvent.type(screen.getByTestId('users-search-input'), 'carlos@');
 
-    expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    });
     expect(screen.getByText('Carlos López')).toBeInTheDocument();
   });
 
@@ -128,7 +158,165 @@ describe('GestionUsuariosPanel', () => {
 
     await userEvent.type(screen.getByTestId('users-search-input'), 'zzznotfound');
 
-    expect(screen.queryAllByTestId('user-row')).toHaveLength(0);
+    await waitFor(() => {
+      expect(screen.queryAllByTestId('user-row')).toHaveLength(0);
+    });
+  });
+
+  it('filters users by role', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(2);
+    });
+
+    await userEvent.selectOptions(screen.getByTestId('role-filter-select'), '1');
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    });
+    expect(screen.getByText('Carlos López')).toBeInTheDocument();
+    expect(screen.queryByText('Ana García')).not.toBeInTheDocument();
+  });
+
+  it('shows all users when role filter is reset to all', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(2));
+
+    await userEvent.selectOptions(screen.getByTestId('role-filter-select'), '1');
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(1));
+
+    await userEvent.selectOptions(screen.getByTestId('role-filter-select'), '');
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(2));
+  });
+
+  it('filters users by active status', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(2);
+    });
+
+    await userEvent.selectOptions(screen.getByTestId('status-filter-select'), 'true');
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    });
+    expect(screen.getByText('Ana García')).toBeInTheDocument();
+    expect(screen.queryByText('Carlos López')).not.toBeInTheDocument();
+  });
+
+  it('filters users by inactive status', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(2);
+    });
+
+    await userEvent.selectOptions(screen.getByTestId('status-filter-select'), 'false');
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('user-row')).toHaveLength(1);
+    });
+    expect(screen.getByText('Carlos López')).toBeInTheDocument();
+  });
+
+  it('passes combined name and role filters to getUsers', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(2));
+
+    await userEvent.type(screen.getByTestId('users-search-input'), 'ana');
+    await userEvent.selectOptions(screen.getByTestId('role-filter-select'), '3');
+
+    await waitFor(() => {
+      expect(mockGetUsers).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'ana', roleId: 3 }),
+      );
+    });
+  });
+
+  it('shows pagination summary', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination-summary')).toHaveTextContent('Mostrando');
+    });
+  });
+
+  it('shows pagination info with page number', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination-info')).toHaveTextContent('Página 1 de 1');
+    });
+  });
+
+  it('disables prev button on first page', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(2));
+    expect(screen.getByTestId('pagination-prev')).toBeDisabled();
+  });
+
+  it('disables next button when on last page', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(2));
+    expect(screen.getByTestId('pagination-next')).toBeDisabled();
+  });
+
+  it('enables next button and navigates when multiple pages exist', async () => {
+    const page0Users = Array.from({ length: 10 }, (_, i) => ({
+      ...ACTIVE_USER,
+      userId: i + 1,
+      name: `Usuario ${i + 1}`,
+      email: `user${i + 1}@example.com`,
+    }));
+    const page1Users = [{ ...INACTIVE_USER, userId: 11 }];
+
+    mockGetUsers.mockImplementation(async (params: UserListParams) => ({
+      content: params.page === 0 ? page0Users : page1Users,
+      totalElements: 11,
+      totalPages: 2,
+      page: params.page,
+      size: 10,
+    }));
+
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(10));
+
+    expect(screen.getByTestId('pagination-next')).not.toBeDisabled();
+    expect(screen.getByTestId('pagination-info')).toHaveTextContent('Página 1 de 2');
+
+    await userEvent.click(screen.getByTestId('pagination-next'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('pagination-info')).toHaveTextContent('Página 2 de 2');
+    });
+    expect(screen.getByTestId('pagination-next')).toBeDisabled();
+    expect(screen.getByTestId('pagination-prev')).not.toBeDisabled();
+  });
+
+  it('resets to page 1 when search filter changes', async () => {
+    const page0Users = Array.from({ length: 10 }, (_, i) => ({
+      ...ACTIVE_USER,
+      userId: i + 1,
+      name: `Usuario ${i + 1}`,
+      email: `user${i + 1}@example.com`,
+    }));
+
+    mockGetUsers.mockImplementation(async (params: UserListParams) => {
+      if (params.name) {
+        return makePage([ACTIVE_USER], params);
+      }
+      return { content: page0Users, totalElements: 15, totalPages: 2, page: params.page, size: 10 };
+    });
+
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => expect(screen.getAllByTestId('user-row')).toHaveLength(10));
+
+    await userEvent.click(screen.getByTestId('pagination-next'));
+    await waitFor(() =>
+      expect(screen.getByTestId('pagination-info')).toHaveTextContent('Página 2 de 2'),
+    );
+
+    await userEvent.type(screen.getByTestId('users-search-input'), 'ana');
+    await waitFor(() =>
+      expect(screen.getByTestId('pagination-info')).toHaveTextContent('Página 1'),
+    );
   });
 
   it('shows create user modal when button is clicked', async () => {
@@ -157,7 +345,6 @@ describe('GestionUsuariosPanel', () => {
   it('calls registerUser and closes modal on successful create', async () => {
     const newUser: AdminUser = { ...ACTIVE_USER, userId: 3, name: 'Nuevo Usuario', email: 'nuevo@example.com' };
     mockRegisterUser.mockResolvedValue(newUser);
-    mockGetUsers.mockResolvedValue([ACTIVE_USER, INACTIVE_USER, newUser]);
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
     await userEvent.click(screen.getByTestId('create-user-button'));
@@ -338,8 +525,9 @@ describe('GestionUsuariosPanel', () => {
       expect(screen.getAllByTestId('user-row')).toHaveLength(2);
     });
 
-    expect(screen.getByText('Activo')).toBeInTheDocument();
-    expect(screen.getByText('Inactivo')).toBeInTheDocument();
+    // getAllByText because filter dropdowns also contain these strings as option labels
+    expect(screen.getAllByText('Activo').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Inactivo').length).toBeGreaterThan(0);
   });
 
   it('shows role badges for each user', async () => {
@@ -348,8 +536,9 @@ describe('GestionUsuariosPanel', () => {
       expect(screen.getAllByTestId('user-row')).toHaveLength(2);
     });
 
-    expect(screen.getByText('Técnico Vendedor')).toBeInTheDocument();
-    expect(screen.getByText('Administrador')).toBeInTheDocument();
+    // getAllByText because role filter dropdown also contains these strings as option labels
+    expect(screen.getAllByText('Técnico Vendedor').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Administrador').length).toBeGreaterThan(0);
   });
 
   it('shows error message when getUsers fails', async () => {
@@ -361,7 +550,9 @@ describe('GestionUsuariosPanel', () => {
   });
 
   it('disables role select for Agricultor in edit modal', async () => {
-    mockGetUsers.mockResolvedValue([{ ...ACTIVE_USER, roleId: 2 }]);
+    mockGetUsers.mockImplementation(async (params: UserListParams) =>
+      makePage([{ ...ACTIVE_USER, roleId: 2 }], params),
+    );
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
     await waitFor(() => {
@@ -370,7 +561,7 @@ describe('GestionUsuariosPanel', () => {
 
     await userEvent.click(screen.getAllByTestId('edit-user-button')[0]);
 
-    const roleSelect = screen.getByRole('combobox');
+    const roleSelect = within(screen.getByTestId('edit-user-modal')).getByRole('combobox');
     expect(roleSelect).toBeDisabled();
     expect(
       screen.getByText('El rol Agricultor no puede ser modificado.'),

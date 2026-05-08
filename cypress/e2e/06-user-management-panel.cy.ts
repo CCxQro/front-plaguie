@@ -1,4 +1,4 @@
-// E2E: User Management Panel — admin can see, create, edit, and deactivate users
+// E2E: User Management Panel — admin can see, create, edit, deactivate, filter, and page users.
 // Requires the app to be running and an admin session seeded in localStorage.
 
 const ADMIN_AUTH = {
@@ -29,9 +29,30 @@ const MOCK_USERS = [
   },
 ];
 
+function page(content: typeof MOCK_USERS, total = content.length, pages = 1, pageNum = 0) {
+  return { content, totalElements: total, totalPages: pages, page: pageNum, size: 10 };
+}
+
 describe('User Management Panel', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/users', { statusCode: 200, body: MOCK_USERS }).as('getUsers');
+    cy.intercept('GET', { pathname: '/api/users' }, (req) => {
+      const { name, roleId, isActive } = req.query as Record<string, string>;
+      let results = [...MOCK_USERS];
+      if (name) {
+        const q = name.toLowerCase();
+        results = results.filter(
+          (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+        );
+      }
+      if (roleId) {
+        results = results.filter((u) => u.roleId === Number(roleId));
+      }
+      if (isActive !== undefined && isActive !== '') {
+        results = results.filter((u) => u.isActive === (isActive === 'true'));
+      }
+      req.reply({ statusCode: 200, body: page(results) });
+    }).as('getUsers');
+
     window.localStorage.setItem('auth-storage', JSON.stringify(ADMIN_AUTH));
     cy.visit('/app/usuarios');
     cy.wait('@getUsers');
@@ -69,6 +90,7 @@ describe('User Management Panel', () => {
 
   it('filters users by name using the search input', () => {
     cy.get('[data-testid="users-search-input"]').type('ana');
+    cy.wait('@getUsers');
     cy.get('[data-testid="user-row"]').should('have.length', 1);
     cy.contains('Ana García').should('be.visible');
     cy.contains('Carlos López').should('not.exist');
@@ -76,9 +98,83 @@ describe('User Management Panel', () => {
 
   it('clears filter when search is cleared', () => {
     cy.get('[data-testid="users-search-input"]').type('ana');
+    cy.wait('@getUsers');
     cy.get('[data-testid="user-row"]').should('have.length', 1);
     cy.get('[data-testid="users-search-input"]').clear();
+    cy.wait('@getUsers');
     cy.get('[data-testid="user-row"]').should('have.length', MOCK_USERS.length);
+  });
+
+  it('filters users by role', () => {
+    cy.get('[data-testid="role-filter-select"]').select('1');
+    cy.wait('@getUsers');
+    cy.get('[data-testid="user-row"]').should('have.length', 1);
+    cy.contains('Carlos López').should('be.visible');
+    cy.contains('Ana García').should('not.exist');
+  });
+
+  it('resets role filter to show all users', () => {
+    cy.get('[data-testid="role-filter-select"]').select('1');
+    cy.wait('@getUsers');
+    cy.get('[data-testid="user-row"]').should('have.length', 1);
+
+    cy.get('[data-testid="role-filter-select"]').select('');
+    cy.wait('@getUsers');
+    cy.get('[data-testid="user-row"]').should('have.length', MOCK_USERS.length);
+  });
+
+  it('filters users by active status', () => {
+    cy.get('[data-testid="status-filter-select"]').select('true');
+    cy.wait('@getUsers');
+    cy.get('[data-testid="user-row"]').should('have.length', 1);
+    cy.contains('Ana García').should('be.visible');
+    cy.contains('Carlos López').should('not.exist');
+  });
+
+  it('filters users by inactive status', () => {
+    cy.get('[data-testid="status-filter-select"]').select('false');
+    cy.wait('@getUsers');
+    cy.get('[data-testid="user-row"]').should('have.length', 1);
+    cy.contains('Carlos López').should('be.visible');
+  });
+
+  it('shows pagination controls', () => {
+    cy.get('[data-testid="pagination-prev"]').should('exist');
+    cy.get('[data-testid="pagination-next"]').should('exist');
+    cy.get('[data-testid="pagination-info"]').should('contain', 'Página 1 de 1');
+  });
+
+  it('disables prev button on first page', () => {
+    cy.get('[data-testid="pagination-prev"]').should('be.disabled');
+  });
+
+  it('navigates to next page', () => {
+    const page0 = Array.from({ length: 10 }, (_, i) => ({
+      ...MOCK_USERS[0],
+      userId: i + 1,
+      name: `Usuario ${i + 1}`,
+      email: `user${i + 1}@example.com`,
+    }));
+    const page1 = [{ ...MOCK_USERS[1], userId: 11 }];
+
+    cy.intercept('GET', { pathname: '/api/users' }, (req) => {
+      const p = Number(req.query.page ?? 0);
+      req.reply({
+        statusCode: 200,
+        body: { content: p === 0 ? page0 : page1, totalElements: 11, totalPages: 2, page: p, size: 10 },
+      });
+    }).as('getUsersPaged');
+
+    cy.visit('/app/usuarios');
+    cy.wait('@getUsersPaged');
+
+    cy.get('[data-testid="pagination-info"]').should('contain', 'Página 1 de 2');
+    cy.get('[data-testid="pagination-next"]').should('not.be.disabled').click();
+    cy.wait('@getUsersPaged');
+
+    cy.get('[data-testid="pagination-info"]').should('contain', 'Página 2 de 2');
+    cy.get('[data-testid="pagination-next"]').should('be.disabled');
+    cy.get('[data-testid="pagination-prev"]').should('not.be.disabled');
   });
 
   it('opens create user modal when button is clicked', () => {
@@ -154,10 +250,6 @@ describe('User Management Panel', () => {
     cy.intercept('DELETE', `/api/users/${MOCK_USERS[0].userId}`, {
       statusCode: 204,
     }).as('deactivateUser');
-    cy.intercept('GET', '/api/users', {
-      statusCode: 200,
-      body: [{ ...MOCK_USERS[0], isActive: false }, MOCK_USERS[1]],
-    }).as('getUsersRefresh');
 
     cy.get(`[aria-label="Desactivar ${MOCK_USERS[0].name}"]`).click();
     cy.get('[data-testid="confirm-deactivate-modal"]').should('be.visible');
