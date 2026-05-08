@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 
 import { SearchIcon } from '../components/Icons/SearchIcon';
 import { BellIcon } from '../components/Icons/BellIcon';
@@ -12,7 +12,9 @@ import {
   updateUserById,
   deactivateUserById,
 } from '../services/admin/users';
-import type { AdminUser, RegisterUserPayload, UpdateUserPayload } from '../types/AdminUser';
+import type { AdminUser, RegisterUserPayload, UpdateUserPayload, UserListParams } from '../types/AdminUser';
+
+const PAGE_SIZE = 10;
 
 type RoleLabel = 'Administrador' | 'Agricultor' | 'Técnico Vendedor';
 
@@ -21,7 +23,6 @@ function roleIdToLabel(roleId: number): RoleLabel {
   if (roleId === 2) return 'Agricultor';
   return 'Técnico Vendedor';
 }
-
 
 function roleBadgeClasses(roleId: number): string {
   if (roleId === 1) return 'bg-[#EFF6FF] text-[#1D4ED8]';
@@ -40,7 +41,11 @@ function GestionUsuariosPanel() {
   const queryClient = useQueryClient();
 
   const [headerSearch, setHeaderSearch] = useState('');
-  const [usersSearch, setUsersSearch] = useState('');
+  const [nameSearch, setNameSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<number | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined);
+  const [page, setPage] = useState(0);
+
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [viewingUserId, setViewingUserId] = useState<number | null>(null);
@@ -59,15 +64,28 @@ function GestionUsuariosPanel() {
     isActive: true,
   });
 
+  const queryParams: UserListParams = {
+    page,
+    size: PAGE_SIZE,
+    ...(nameSearch.trim() ? { name: nameSearch.trim() } : {}),
+    ...(roleFilter !== undefined ? { roleId: roleFilter } : {}),
+    ...(statusFilter !== undefined ? { isActive: statusFilter } : {}),
+  };
+
   const {
-    data: users = [],
+    data,
     isLoading,
     error: listError,
   } = useQuery({
-    queryKey: ['users'],
-    queryFn: getUsers,
+    queryKey: ['users', queryParams],
+    queryFn: () => getUsers(queryParams),
     staleTime: 60 * 1000,
+    placeholderData: keepPreviousData,
   });
+
+  const users = data?.content ?? [];
+  const totalElements = data?.totalElements ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   const { data: viewingUser, isLoading: isLoadingDetail } = useQuery({
     queryKey: ['user', viewingUserId],
@@ -119,12 +137,6 @@ function GestionUsuariosPanel() {
       setFormError(error instanceof Error ? error.message : 'No se pudo reactivar usuario'),
   });
 
-  const filteredUsers = useMemo(() => {
-    const query = usersSearch.trim().toLowerCase();
-    if (!query) return users;
-    return users.filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(query));
-  }, [usersSearch, users]);
-
   const listErrorMessage = listError instanceof Error ? listError.message : null;
 
   const openCreateModal = () => {
@@ -137,6 +149,21 @@ function GestionUsuariosPanel() {
     setEditForm({ name: user.name, roleId: user.roleId, isActive: user.isActive });
     setFormError(null);
     setEditingUser(user);
+  };
+
+  const handleNameChange = (value: string) => {
+    setNameSearch(value);
+    setPage(0);
+  };
+
+  const handleRoleChange = (value: string) => {
+    setRoleFilter(value ? Number(value) : undefined);
+    setPage(0);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value === '' ? undefined : value === 'true');
+    setPage(0);
   };
 
   const handleCreateUser = () => {
@@ -187,6 +214,9 @@ function GestionUsuariosPanel() {
     deactivateMutation.isPending ||
     reactivateMutation.isPending;
 
+  const startItem = totalElements === 0 ? 0 : page * PAGE_SIZE + 1;
+  const endItem = Math.min((page + 1) * PAGE_SIZE, totalElements);
+
   return (
     <>
       <div className="flex flex-1 flex-col bg-[#F9FAFB]" data-testid="gestion-usuarios-panel">
@@ -234,19 +264,43 @@ function GestionUsuariosPanel() {
             </button>
           </section>
 
-          <section className="mb-6">
-            <label className="relative block">
+          {/* Filter bar */}
+          <section className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="relative block sm:flex-1">
               <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#99A1AF]">
                 <SearchIcon />
               </span>
               <input
-                value={usersSearch}
-                onChange={(e) => setUsersSearch(e.target.value)}
+                value={nameSearch}
+                onChange={(e) => handleNameChange(e.target.value)}
                 placeholder="Buscar usuario por nombre o correo..."
                 data-testid="users-search-input"
                 className="h-12.5 w-full rounded-[10px] border border-[#D1D5DC] bg-white pl-12 pr-4 text-base text-[#0A0A0A] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/15"
               />
             </label>
+
+            <select
+              value={roleFilter ?? ''}
+              onChange={(e) => handleRoleChange(e.target.value)}
+              data-testid="role-filter-select"
+              className="h-12.5 rounded-[10px] border border-[#D1D5DC] bg-white px-3 text-sm text-[#364153] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/15 sm:w-48"
+            >
+              <option value="">Todos los roles</option>
+              <option value="1">Administrador</option>
+              <option value="2">Agricultor</option>
+              <option value="3">Técnico Vendedor</option>
+            </select>
+
+            <select
+              value={statusFilter === undefined ? '' : String(statusFilter)}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              data-testid="status-filter-select"
+              className="h-12.5 rounded-[10px] border border-[#D1D5DC] bg-white px-3 text-sm text-[#364153] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/15 sm:w-44"
+            >
+              <option value="">Todos los estados</option>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
           </section>
 
           <section className="overflow-hidden rounded-[14px] border border-[#E5E7EB] bg-white shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
@@ -265,7 +319,7 @@ function GestionUsuariosPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((row) => (
+                  {users.map((row) => (
                     <tr
                       key={row.userId}
                       data-testid="user-row"
@@ -347,9 +401,37 @@ function GestionUsuariosPanel() {
             </div>
           </section>
 
-          <p className="mt-6 text-sm text-[#6A7282]">
-            Mostrando {filteredUsers.length} de {users.length} usuarios registrados
-          </p>
+          {/* Pagination footer */}
+          <div className="mt-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[#6A7282]" data-testid="pagination-summary">
+              {totalElements === 0
+                ? 'Sin resultados'
+                : `Mostrando ${startItem}–${endItem} de ${totalElements} usuarios`}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => p - 1)}
+                disabled={page === 0}
+                data-testid="pagination-prev"
+                className="h-9 rounded-[10px] border border-[#D1D5DC] px-4 text-sm font-medium text-[#364153] hover:bg-[#F9FAFB] disabled:opacity-40"
+              >
+                ← Anterior
+              </button>
+              <span className="text-sm text-[#6A7282]" data-testid="pagination-info">
+                Página {page + 1} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= totalPages - 1}
+                data-testid="pagination-next"
+                className="h-9 rounded-[10px] border border-[#D1D5DC] px-4 text-sm font-medium text-[#364153] hover:bg-[#F9FAFB] disabled:opacity-40"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
         </main>
       </div>
 
