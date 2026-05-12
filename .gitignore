@@ -34,4 +34,6 @@ dist-ssr
 storybook-static
 
 
-.github
+.claude/
+.agents/
+CLAUDE.md
