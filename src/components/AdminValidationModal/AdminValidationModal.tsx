@@ -34,11 +34,15 @@ export function AdminValidationModal({
 
   // Animate in
   useEffect(() => {
+    let frameId: number;
     if (isOpen) {
-      requestAnimationFrame(() => setShow(true));
+      frameId = requestAnimationFrame(() => setShow(true));
     } else {
-      setShow(false);
+      frameId = requestAnimationFrame(() => setShow(false));
     }
+    return () => {
+      if (frameId) cancelAnimationFrame(frameId);
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
