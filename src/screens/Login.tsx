@@ -7,6 +7,8 @@ import { login } from '../services/auth/login';
 import useAuthStore from '../services/Contexts/useAuthStore';
 import { getDefaultRoute } from '../components/ProtectedRoute/routes';
 
+const DEACTIVATED_ACCOUNT_ERROR = 'La cuenta de usuario está desactivada';
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const authLogin = useAuthStore((state) => state.login);
@@ -14,9 +16,18 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [fieldType, setFieldType] = useState('password');
+  const [errorMessage, setErrorMessage] = useState(() => {
+    const flash = sessionStorage.getItem('login-flash');
+    if (flash) {
+      sessionStorage.removeItem('login-flash');
+      return flash;
+    }
+    return '';
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
     if (!email || !password) {
       return;
@@ -25,10 +36,14 @@ const Login: React.FC = () => {
     try {
       const { user, token } = await login(email, password);
       authLogin(user, token);
-      console.log('Login response:', { user, token });
       navigate(getDefaultRoute(user.roleId));
     } catch (error) {
-      console.error('Login error:', error);
+      const msg = error instanceof Error ? error.message : '';
+      if (msg === DEACTIVATED_ACCOUNT_ERROR) {
+        setErrorMessage('Tu cuenta ha sido desactivada. Contacta a un administrador.');
+      } else {
+        setErrorMessage('Correo o contraseña incorrectos. Inténtalo de nuevo.');
+      }
     }
   };
 
@@ -95,6 +110,15 @@ const Login: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6" data-testid="login-form">
+            {errorMessage && (
+              <div
+                role="alert"
+                data-testid="login-error"
+                className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+              >
+                {errorMessage}
+              </div>
+            )}
             {/* Email */}
             <div className="space-y-2">
               <label className="text-sm font-semibold text-[#334155]">

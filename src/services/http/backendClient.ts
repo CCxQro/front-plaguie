@@ -16,9 +16,20 @@ backendClient.interceptors.request.use((config) => {
 });
 
 // Normalise backend error messages so callers always receive a plain Error.
+// A 403 mid-session means the account was deactivated — clear the session and go to /login.
 backendClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 403) {
+      useAuthStore.getState().logout();
+      sessionStorage.setItem(
+        'login-flash',
+        'Tu sesión ha finalizado. Tu cuenta puede haber sido desactivada.',
+      );
+      window.location.replace('/login');
+      return new Promise(() => {});
+    }
+
     const message: string =
       error.response?.data?.error ??
       error.response?.data?.message ??

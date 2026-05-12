@@ -6,7 +6,12 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import './index.css'
 import Login from './screens/Login'
 import StatusPage from './screens/StatusPage'
-import Dashboard from './screens/Dashboard'
+import AdminLayout from './screens/AdminLayout'
+import AdminOverviewPanel from './screens/AdminOverviewPanel'
+import GestionUsuariosPanel from './screens/GestionUsuariosPanel'
+import InventarioPanel from './screens/InventarioPanel'
+import ValidacionPanel from './screens/ValidacionPanel'
+import DashboardsPanel from './screens/DashboardsPanel'
 import AgricultorPanel from './screens/AgricultorPanel'
 import SalesTechnicianPanel from './screens/SalesTechnicianPanel'
 import SalesTechnicianLayout from './screens/SalesTechnicianLayout'
@@ -38,9 +43,16 @@ createRoot(document.getElementById('root')!).render(
           {/* Admin only */}
           <Route path="/app" element={
             <ProtectedRoute allowedRoles={[1]}>
-              <Dashboard />
+              <AdminLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<Navigate to="usuarios" replace />} />
+            <Route path="dashboard" element={<AdminOverviewPanel />} />
+            <Route path="usuarios" element={<GestionUsuariosPanel />} />
+            <Route path="inventario" element={<InventarioPanel />} />
+            <Route path="validacion" element={<ValidacionPanel />} />
+            <Route path="dashboards" element={<DashboardsPanel />} />
+          </Route>
 
           {/* Agricultor only */}
           <Route path="/agricultor" element={
