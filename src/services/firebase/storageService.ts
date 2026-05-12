@@ -30,6 +30,10 @@ export function uploadFile(
   });
 }
 
+export async function getDownloadUrl(path: string): Promise<string> {
+  return getDownloadURL(ref(storage, path));
+}
+
 export async function deleteFile(path: string): Promise<void> {
   try {
     await deleteObject(ref(storage, path));

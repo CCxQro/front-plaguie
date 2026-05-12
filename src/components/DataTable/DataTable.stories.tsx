@@ -21,7 +21,7 @@ const INVENTORY_ROWS: InventoryTableRowData[] = [
     product: 'Fungicida X-100 Pro',
     sku: 'FG-100-2024',
     category: 'Fungicidas',
-    categoryTone: 'fungicidas',
+    categoryColor: '#8200DB',
     price: '$45.00',
     stock: 85,
     stockMax: 100,
@@ -33,7 +33,7 @@ const INVENTORY_ROWS: InventoryTableRowData[] = [
     product: 'Insecticida EcoGuard',
     sku: 'IG-EG-3321',
     category: 'Insecticidas',
-    categoryTone: 'insecticidas',
+    categoryColor: '#1447E6',
     price: '$32.50',
     stock: 12,
     stockMax: 40,
@@ -46,7 +46,7 @@ const INVENTORY_ROWS: InventoryTableRowData[] = [
     product: 'Fertilizante NitroPlus',
     sku: 'FT-NP-996',
     category: 'Fertilizantes',
-    categoryTone: 'fertilizantes',
+    categoryColor: '#008236',
     price: '$28.00',
     stock: 0,
     stockMax: 100,
@@ -59,7 +59,7 @@ const INVENTORY_ROWS: InventoryTableRowData[] = [
     product: 'Herbicida Max-Strong',
     sku: 'HB-MS-1135',
     category: 'Herbicidas',
-    categoryTone: 'herbicidas',
+    categoryColor: '#CA3500',
     price: '$55.00',
     stock: 45,
     stockMax: 60,
@@ -76,13 +76,13 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    variant: { control: 'radio', options: ['completa', 'compacta'] },
     rows: { control: 'object' },
     title: { control: 'text' },
     headerActionText: { control: 'text' },
     pageText: { control: 'text' },
     previousLabel: { control: 'text' },
     nextLabel: { control: 'text' },
+    emptyText: { control: 'text' },
     onView: { action: 'onView' },
     onEdit: { action: 'onEdit' },
     onDelete: { action: 'onDelete' },
@@ -94,26 +94,21 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    variant: 'completa',
     rows: INVENTORY_ROWS,
     title: 'Inventario',
     headerActionText: 'Mostrando 4 productos',
     pageText: 'Pagina 1 de 1',
     previousLabel: 'Anterior',
     nextLabel: 'Siguiente',
-    className: 'w-[1088px]',
+    className: 'w-full max-w-6xl',
   } satisfies DataTableProps,
 };
 
-export const Compacta: Story = {
+export const Empty: Story = {
   args: {
-    variant: 'compacta',
-    rows: INVENTORY_ROWS,
+    rows: [],
     title: 'Inventario',
-    headerActionText: 'Vista compacta',
-    pageText: 'Pagina 1 de 1',
-    previousLabel: 'Anterior',
-    nextLabel: 'Siguiente',
-    className: 'w-[960px]',
+    headerActionText: 'Sin productos',
+    className: 'w-full max-w-6xl',
   } satisfies DataTableProps,
 };
