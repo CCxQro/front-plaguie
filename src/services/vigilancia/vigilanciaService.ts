@@ -1,14 +1,23 @@
 import { backendClient } from '../http/backendClient';
 
 export interface VigilanciaFitosanitariaDto {
-  vigilanciaId: number;
-  tipoPlaga: string;
-  incidencia: number;
-  severidad: number;
-  descripcion: string;
-  createdAt: string;
-  ubicacionId: number;
-  reportedByUserId: number;
+  vigilanciaFitosanitariaId: number;
+  systemMonitoringId?: number;
+  systemMonitoringName?: string;
+  identificationKeyId?: number;
+  identificationKeyName?: string;
+  latitude?: number;
+  longitude?: number;
+  locationId?: number;
+  plagueId?: number;
+  plagueName?: string;
+  hostId?: number;
+  hostName?: string;
+  varietyId?: number;
+  varietyName?: string;
+  speciesId?: number;
+  speciesName?: string;
+  ahosp?: number;
   statusId: number;
   statusName: string;
   validatedByUserId?: number;
