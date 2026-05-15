@@ -1,7 +1,52 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ClientFilters } from './ClientFilters';
-import { emptyFilters } from '../../services/clients/clientsAggregator';
+import { ClientFilters, emptyFilterState } from './ClientFilters';
+import type { ClientMapItem } from '../../services/sales/salesClientsService';
+
+const sampleClients: ClientMapItem[] = [
+  {
+    farmerId: 1,
+    userId: 1,
+    name: 'Rancho Las Flores',
+    email: 'a@a.com',
+    latitude: 20,
+    longitude: -100,
+    locationId: 1,
+    state: 'Jalisco',
+    municipality: 'Guadalajara',
+    locality: null,
+    cultivos: ['Maíz', 'Trigo'],
+    estadosParcela: ['Activa', 'En reposo'],
+    parcelasCount: 2,
+    totalHectareas: 10,
+    hasActiveAlerts: false,
+    activeAlertsCount: 0,
+    maxAlertSeverity: null,
+    totalOrders: 3,
+    lastOrderDate: null,
+  },
+  {
+    farmerId: 2,
+    userId: 2,
+    name: 'Finca La Esperanza',
+    email: 'b@b.com',
+    latitude: 21,
+    longitude: -101,
+    locationId: 2,
+    state: 'Michoacán',
+    municipality: 'Morelia',
+    locality: null,
+    cultivos: ['Trigo'],
+    estadosParcela: ['Activa'],
+    parcelasCount: 1,
+    totalHectareas: 5,
+    hasActiveAlerts: true,
+    activeAlertsCount: 1,
+    maxAlertSeverity: 'critico',
+    totalOrders: 1,
+    lastOrderDate: null,
+  },
+];
 
 describe('ClientFilters', () => {
   const setup = (overrides: Partial<Parameters<typeof ClientFilters>[0]> = {}) => {
@@ -9,10 +54,10 @@ describe('ClientFilters', () => {
     const onReset = vi.fn();
     render(
       <ClientFilters
-        value={emptyFilters}
-        availableStatuses={['Entregado', 'Pendiente']}
-        totalClients={10}
-        filteredCount={10}
+        value={emptyFilterState}
+        clients={sampleClients}
+        totalCount={2}
+        filteredCount={2}
         onChange={onChange}
         onReset={onReset}
         {...overrides}
@@ -27,7 +72,7 @@ describe('ClientFilters', () => {
   });
 
   it('shows the filtered/total counts', () => {
-    setup({ totalClients: 7, filteredCount: 3 });
+    setup({ totalCount: 7, filteredCount: 3 });
     expect(screen.getByText(/3/)).toBeInTheDocument();
     expect(screen.getByText(/7/)).toBeInTheDocument();
   });
@@ -42,54 +87,44 @@ describe('ClientFilters', () => {
     );
   });
 
-  it('toggles a status chip on click', () => {
+  it('populates cultivo dropdown with unique values from clients', () => {
+    setup();
+    expect(screen.getByRole('option', { name: 'Maíz' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Trigo' })).toBeInTheDocument();
+  });
+
+  it('emits onChange when selecting a cultivo', () => {
     const { onChange } = setup();
-    fireEvent.click(screen.getByTestId('client-filters-status-Entregado'));
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ statuses: ['Entregado'] }),
-    );
-  });
-
-  it('removes a status when clicked again', () => {
-    const { onChange } = setup({
-      value: { ...emptyFilters, statuses: ['Entregado'] },
+    fireEvent.change(screen.getByTestId('client-filters-cultivo'), {
+      target: { value: 'Maíz' },
     });
-    fireEvent.click(screen.getByTestId('client-filters-status-Entregado'));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ statuses: [] }),
+      expect.objectContaining({ cultivo: 'Maíz' }),
     );
   });
 
-  it('parses numeric inputs to numbers', () => {
+  it('populates state dropdown with unique states from clients', () => {
+    setup();
+    expect(screen.getByRole('option', { name: 'Jalisco' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Michoacán' })).toBeInTheDocument();
+  });
+
+  it('emits onChange when toggling the alerts-only checkbox', () => {
     const { onChange } = setup();
-    fireEvent.change(screen.getByTestId('client-filters-min-orders'), {
-      target: { value: '3' },
-    });
+    fireEvent.click(screen.getByTestId('client-filters-alerts-toggle'));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ minOrders: 3 }),
+      expect.objectContaining({ onlyWithActiveAlerts: true }),
     );
   });
 
-  it('treats empty numeric input as null', () => {
-    const { onChange } = setup({
-      value: { ...emptyFilters, minSpent: 100 },
-    });
-    fireEvent.change(screen.getByTestId('client-filters-min-spent'), {
-      target: { value: '' },
-    });
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ minSpent: null }),
-    );
+  it('does not show reset button when filters are empty', () => {
+    setup();
+    expect(screen.queryByTestId('client-filters-reset')).toBeNull();
   });
 
-  it('calls onReset when clicking Limpiar', () => {
-    const { onReset } = setup();
+  it('shows reset button and calls onReset when filters are active', () => {
+    const { onReset } = setup({ value: { ...emptyFilterState, search: 'test' } });
     fireEvent.click(screen.getByTestId('client-filters-reset'));
     expect(onReset).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows a fallback when no statuses are available', () => {
-    setup({ availableStatuses: [] });
-    expect(screen.getByText(/sin estados disponibles/i)).toBeInTheDocument();
   });
 });

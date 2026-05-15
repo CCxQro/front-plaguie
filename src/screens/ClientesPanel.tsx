@@ -1,50 +1,69 @@
 import { useMemo, useState } from 'react';
 import { ClientMap } from '../components/ClientMap/ClientMap';
-import { ClientFilters } from '../components/ClientFilters/ClientFilters';
+import { ClientFilters, emptyFilterState, type FilterState } from '../components/ClientFilters/ClientFilters';
 import { ClientDetailDrawer } from '../components/ClientDetailDrawer/ClientDetailDrawer';
-import { useClientsWithOrders } from '../hooks/useClientsWithOrders';
-import {
-  applyFilters,
-  emptyFilters,
-  type ClientFilters as ClientFiltersValue,
-} from '../services/clients/clientsAggregator';
+import { useClientsMap } from '../hooks/useClientsMap';
+import { useClientDetail } from '../hooks/useClientDetail';
+import type { ClientMapFilters } from '../services/sales/salesClientsService';
 
 function ClientesPanel() {
-  const { clients, isLoading, isError, error, refetch } = useClientsWithOrders();
-  const [filters, setFilters] = useState<ClientFiltersValue>(emptyFilters);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterState>(emptyFilterState);
+  const [selectedFarmerId, setSelectedFarmerId] = useState<number | null>(null);
 
-  const availableStatuses = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of clients) for (const s of c.statuses) set.add(s);
-    return Array.from(set).sort();
-  }, [clients]);
+  const serverFilters = useMemo<ClientMapFilters>(() => ({
+    cultivo: filters.cultivo || undefined,
+    estadoParcela: filters.estadoParcela || undefined,
+    state: filters.state || undefined,
+    onlyWithActiveAlerts: filters.onlyWithActiveAlerts || undefined,
+  }), [filters.cultivo, filters.estadoParcela, filters.state, filters.onlyWithActiveAlerts]);
 
-  const filteredClients = useMemo(
-    () => applyFilters(clients, filters),
-    [clients, filters],
+  const { data: allClients = [], isLoading, isError, error, refetch } = useClientsMap(serverFilters);
+  const { data: clientDetail, isLoading: detailLoading } = useClientDetail(selectedFarmerId);
+
+  const filteredClients = useMemo(() => {
+    const term = filters.search.trim().toLowerCase();
+    if (!term) return allClients;
+    return allClients.filter((c) => c.name.toLowerCase().includes(term));
+  }, [allClients, filters.search]);
+
+  const criticosCount = useMemo(
+    () => allClients.filter((c) => c.maxAlertSeverity === 'critico').length,
+    [allClients],
+  );
+  const advertenciasCount = useMemo(
+    () => allClients.filter((c) => c.maxAlertSeverity === 'advertencia').length,
+    [allClients],
   );
 
-  const selectedClient = useMemo(
-    () => filteredClients.find((c) => c.clientId === selectedClientId) ?? null,
-    [filteredClients, selectedClientId],
-  );
+  const showDrawer = selectedFarmerId !== null;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#F9FAFB] font-sans" data-testid="clientes-panel">
 
       {/* Page header */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] bg-white px-8 py-5">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#0F172A]">Mapa de Clientes</h1>
-          <p className="text-sm text-[#64748B]">
-            Selecciona un agricultor en el mapa para ver su detalle.
-          </p>
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-xl font-semibold text-[#0F172A]">Mapa de Clientes</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm text-[#64748B]">
+              {allClients.length} {allClients.length === 1 ? 'cliente' : 'clientes'} registrados
+            </p>
+            {criticosCount > 0 && (
+              <span className="rounded-full bg-[rgba(251,44,54,0.1)] px-2.5 py-0.5 font-sans text-xs font-semibold text-[#FB2C36]">
+                Críticos: {criticosCount}
+              </span>
+            )}
+            {advertenciasCount > 0 && (
+              <span className="rounded-full bg-[rgba(255,105,0,0.1)] px-2.5 py-0.5 font-sans text-xs font-semibold text-[#FF6900]">
+                Advertencias: {advertenciasCount}
+              </span>
+            )}
+          </div>
         </div>
         <button
           type="button"
-          onClick={refetch}
-          className="cursor-pointer rounded-md border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-medium text-[#475569] hover:border-[#16A34A] hover:text-[#15803D]"
+          onClick={() => void refetch()}
+          className="cursor-pointer rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-medium text-[#475569] hover:border-[#2B7FFF] hover:text-[#2B7FFF]"
           data-testid="clientes-panel-refresh"
         >
           Actualizar
@@ -57,65 +76,69 @@ function ClientesPanel() {
         {/* Left: filters */}
         <ClientFilters
           value={filters}
-          availableStatuses={availableStatuses}
-          totalClients={clients.length}
+          clients={allClients}
+          totalCount={allClients.length}
           filteredCount={filteredClients.length}
           onChange={setFilters}
-          onReset={() => setFilters(emptyFilters)}
+          onReset={() => setFilters(emptyFilterState)}
         />
 
         {/* Center: map */}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {isLoading ? (
             <div
-              className="flex h-full items-center justify-center rounded-lg border border-[#E2E8F0] bg-white"
+              className="flex h-full items-center justify-center rounded-2xl border border-[#E2E8F0] bg-white"
               data-testid="clientes-panel-loading"
             >
-              <p className="text-sm text-[#64748B]">Cargando ubicaciones de clientes…</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E2E8F0] border-t-[#2B7FFF]" />
+                <p className="text-sm text-[#64748B]">Cargando clientes…</p>
+              </div>
             </div>
           ) : isError ? (
             <div
-              className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-6 text-center"
+              className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] px-6 text-center"
               data-testid="clientes-panel-error"
             >
               <p className="text-sm font-semibold text-[#B91C1C]">
                 No fue posible cargar los clientes
               </p>
               <p className="text-xs text-[#7F1D1D]">
-                {error?.message ?? 'Intenta de nuevo en unos momentos.'}
+                {(error as Error)?.message ?? 'Intenta de nuevo en unos momentos.'}
               </p>
               <button
                 type="button"
-                onClick={refetch}
-                className="cursor-pointer rounded-md bg-[#B91C1C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#991B1B]"
+                onClick={() => void refetch()}
+                className="cursor-pointer rounded-lg bg-[#B91C1C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#991B1B]"
               >
                 Reintentar
               </button>
             </div>
           ) : filteredClients.length === 0 ? (
             <div
-              className="flex h-full flex-col items-center justify-center gap-2 rounded-lg border border-[#E2E8F0] bg-white px-6 text-center"
+              className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-[#E2E8F0] bg-white px-6 text-center"
               data-testid="clientes-panel-empty"
             >
               <p className="text-sm font-semibold text-[#0F172A]">Sin clientes para mostrar</p>
               <p className="text-xs text-[#64748B]">
-                Ajusta los filtros o vuelve a cargar para ver tus clientes.
+                Ajusta los filtros o actualiza para ver tus clientes.
               </p>
             </div>
           ) : (
             <ClientMap
               clients={filteredClients}
-              selectedClientId={selectedClientId}
-              onSelectClient={setSelectedClientId}
+              selectedClientId={selectedFarmerId}
+              onSelectClient={setSelectedFarmerId}
             />
           )}
         </main>
 
-        {/* Right: detail panel — appears inline, does not cover the map */}
-        {selectedClient && (
+        {/* Right: detail panel */}
+        {showDrawer && (
           <ClientDetailDrawer
-            client={selectedClient}
-            onClose={() => setSelectedClientId(null)}
+            client={clientDetail ?? null}
+            isLoading={detailLoading}
+            onClose={() => setSelectedFarmerId(null)}
           />
         )}
       </div>

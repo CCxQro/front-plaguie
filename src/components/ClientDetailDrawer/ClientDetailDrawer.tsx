@@ -1,9 +1,21 @@
 import { useEffect } from 'react';
-import type { EnrichedClient } from '../../services/clients/clientsAggregator';
+import type {
+  ClientDetail,
+  ClientParcelaSummary,
+  ClientAlertaSummary,
+} from '../../services/sales/salesClientsService';
 
 export interface ClientDetailDrawerProps {
-  client: EnrichedClient | null;
+  client: ClientDetail | null;
+  isLoading?: boolean;
   onClose: () => void;
+}
+
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatCurrency(amount: number): string {
@@ -14,33 +26,75 @@ function formatCurrency(amount: number): string {
   });
 }
 
-function formatDate(iso: string | null): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+const SEVERITY_LABEL: Record<string, string> = {
+  critico: 'Crítico',
+  advertencia: 'Advertencia',
+  informacion: 'Información',
+};
+
+const SEVERITY_CLASS: Record<string, string> = {
+  critico: '[--sb:rgba(251,44,54,0.1)] [--st:#FB2C36]',
+  advertencia: '[--sb:rgba(255,105,0,0.1)] [--st:#FF6900]',
+  informacion: '[--sb:rgba(43,127,255,0.1)] [--st:#2B7FFF]',
+};
+
+function AlertaBadge({ severidad }: { severidad: ClientAlertaSummary['severidad'] }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 font-sans text-[10px] font-semibold bg-(--sb) text-(--st) ${SEVERITY_CLASS[severidad] ?? ''}`}
+    >
+      {SEVERITY_LABEL[severidad] ?? severidad}
+    </span>
+  );
 }
 
-function statusColor(status: string): { bg: string; text: string } {
-  const normalized = status.toLowerCase();
-  if (normalized.includes('entreg')) return { bg: '#DCFCE7', text: '#15803D' };
-  if (normalized.includes('cancel')) return { bg: '#FEE2E2', text: '#B91C1C' };
-  if (normalized.includes('pend')) return { bg: '#FEF3C7', text: '#B45309' };
-  if (
-    normalized.includes('proces') ||
-    normalized.includes('envío') ||
-    normalized.includes('envio')
-  ) {
-    return { bg: '#DBEAFE', text: '#1D4ED8' };
-  }
-  return { bg: '#F1F5F9', text: '#475569' };
+function ParcelaCard({ parcela }: { parcela: ClientParcelaSummary }) {
+  return (
+    <div
+      className="rounded-xl border border-[#E2E8F0] bg-[#F9FAFB] p-3"
+      data-testid="client-detail-parcela"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-sans text-sm font-semibold text-[#0F172A]">{parcela.nombreParcela}</p>
+        {parcela.estadoParcela && (
+          <span className="shrink-0 rounded-full border border-[#E2E8F0] bg-white px-2 py-0.5 font-sans text-[10px] font-medium text-[#64748B]">
+            {parcela.estadoParcela}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+        {parcela.tipoCultivo && (
+          <DataRow label="Cultivo" value={parcela.tipoCultivo} />
+        )}
+        <DataRow label="Tamaño" value={`${parcela.tamanoHectareas} ha`} />
+        {parcela.sistemaRiego && (
+          <DataRow label="Riego" value={parcela.sistemaRiego} />
+        )}
+        {parcela.phSuelo != null && (
+          <DataRow label="pH suelo" value={String(parcela.phSuelo)} />
+        )}
+        {parcela.fechaSiembra && (
+          <DataRow label="Siembra" value={formatDate(parcela.fechaSiembra)} />
+        )}
+        {parcela.fechaCosecha && (
+          <DataRow label="Cosecha" value={formatDate(parcela.fechaCosecha)} />
+        )}
+      </div>
+    </div>
+  );
 }
 
-export function ClientDetailDrawer({ client, onClose }: ClientDetailDrawerProps) {
+function DataRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col">
+      <span className="font-sans text-[10px] text-[#94A3B8]">{label}</span>
+      <span className="font-sans text-xs font-medium text-[#334155]">{value}</span>
+    </div>
+  );
+}
+
+export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailDrawerProps) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -49,28 +103,32 @@ export function ClientDetailDrawer({ client, onClose }: ClientDetailDrawerProps)
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  if (!client) return null;
+  if (!client && !isLoading) return null;
 
   return (
     <aside
-      className="flex h-full w-80 shrink-0 flex-col overflow-hidden rounded-lg border border-[#E2E8F0] bg-white shadow-md"
+      className="flex h-full w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-[0_4px_6px_-1px_rgba(0,0,0,0.07),0_2px_4px_-2px_rgba(0,0,0,0.05)]"
       data-testid="client-detail-drawer"
     >
       {/* Header */}
       <header className="flex items-start justify-between border-b border-[#E2E8F0] px-5 py-4">
         <div className="min-w-0 flex-1 pr-3">
-          <p className="font-sans text-[10px] uppercase tracking-wide text-[#64748B]">Cliente</p>
-          <h2 className="truncate font-sans text-base font-semibold text-[#0F172A]">
-            {client.clientName}
-          </h2>
-          <p className="mt-0.5 font-sans text-[11px] text-[#94A3B8]">
-            ID #{client.farmerId}
-          </p>
+          <p className="font-sans text-[10px] uppercase tracking-wide text-[#94A3B8]">Cliente</p>
+          {isLoading && !client ? (
+            <div className="mt-1 h-4 w-36 animate-pulse rounded bg-[#E2E8F0]" />
+          ) : (
+            <h2 className="truncate font-sans text-base font-semibold text-[#0F172A]">
+              {client!.name}
+            </h2>
+          )}
+          {client && (
+            <p className="mt-0.5 font-sans text-[11px] text-[#94A3B8]">ID #{client.farmerId}</p>
+          )}
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="shrink-0 cursor-pointer rounded-md p-1.5 text-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#475569]"
+          className="shrink-0 cursor-pointer rounded-lg p-1.5 text-[#94A3B8] hover:bg-[#F1F5F9] hover:text-[#475569]"
           aria-label="Cerrar detalle"
           data-testid="client-detail-close"
         >
@@ -80,81 +138,100 @@ export function ClientDetailDrawer({ client, onClose }: ClientDetailDrawerProps)
         </button>
       </header>
 
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-
-        {/* Metric cards */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-[#E2E8F0] bg-[#F9FAFB] p-3">
-            <p className="font-sans text-[11px] text-[#64748B]">Pedidos</p>
-            <p className="font-sans text-2xl font-bold text-[#0F172A]">{client.totalOrders}</p>
-          </div>
-          <div className="rounded-lg border border-[#E2E8F0] bg-[#F9FAFB] p-3">
-            <p className="font-sans text-[11px] text-[#64748B]">Acumulado</p>
-            <p className="truncate font-sans text-lg font-bold text-[#0F172A]">
-              {formatCurrency(client.totalSpent)}
-            </p>
-          </div>
+      {isLoading && !client ? (
+        <div className="flex flex-1 items-center justify-center">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E2E8F0] border-t-[#2B7FFF]" />
         </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-5 py-4">
 
-        {/* Last order summary */}
-        <div className="mt-3 rounded-lg border border-[#E2E8F0] bg-[#F9FAFB] p-3">
-          <p className="font-sans text-[11px] text-[#64748B]">Último pedido</p>
-          <p className="font-sans text-sm font-medium text-[#0F172A]">
-            {formatDate(client.lastOrderDate)}
-          </p>
-          {client.lastOrderStatus ? (
-            <p className="mt-0.5 font-sans text-[11px] text-[#64748B]">
-              {client.lastOrderStatus}
+          {/* Location */}
+          {(client!.state || client!.municipality) && (
+            <p className="mb-3 font-sans text-xs text-[#64748B]">
+              {[client!.municipality, client!.state].filter(Boolean).join(', ')}
             </p>
-          ) : null}
-        </div>
-
-        {/* Order history */}
-        <div className="mt-4">
-          <h3 className="font-sans text-xs font-semibold uppercase tracking-wide text-[#475569]">
-            Historial de pedidos
-          </h3>
-
-          {client.orders.length === 0 ? (
-            <p className="mt-3 font-sans text-sm italic text-[#94A3B8]">
-              Sin pedidos registrados.
-            </p>
-          ) : (
-            <ul className="mt-2 flex flex-col gap-2">
-              {client.orders.map((order) => {
-                const colors = statusColor(order.orderStatusName);
-                return (
-                  <li
-                    key={order.orderId}
-                    className="rounded-md border border-[#E2E8F0] bg-white px-3 py-2.5"
-                    data-testid="client-detail-order"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-sans text-sm font-medium text-[#0F172A]">
-                          Pedido #{order.orderId}
-                        </p>
-                        <p className="font-sans text-[11px] text-[#94A3B8]">
-                          {formatDate(order.orderDate)}
-                        </p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 font-sans text-[10px] font-semibold text-(--st-text) bg-(--st-bg) [--st-bg:${colors.bg}] [--st-text:${colors.text}]`}
-                      >
-                        {order.orderStatusName}
-                      </span>
-                    </div>
-                    <p className="mt-1 font-sans text-sm font-semibold text-[#0F172A]">
-                      {formatCurrency(order.totalAmount)}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
           )}
+
+          {/* Order summary */}
+          {client!.orderSummary && (
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F9FAFB] p-3">
+                <p className="font-sans text-[11px] text-[#64748B]">Pedidos</p>
+                <p className="font-sans text-2xl font-bold text-[#0F172A]">
+                  {client!.orderSummary.totalOrders}
+                </p>
+              </div>
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#F9FAFB] p-3">
+                <p className="font-sans text-[11px] text-[#64748B]">Acumulado</p>
+                <p className="truncate font-sans text-lg font-bold text-[#0F172A]">
+                  {formatCurrency(Number(client!.orderSummary.totalAmount ?? 0))}
+                </p>
+              </div>
+              {client!.orderSummary.lastOrderDate && (
+                <div className="col-span-2 rounded-xl border border-[#E2E8F0] bg-[#F9FAFB] p-3">
+                  <p className="font-sans text-[11px] text-[#64748B]">Último pedido</p>
+                  <p className="font-sans text-sm font-medium text-[#0F172A]">
+                    {formatDate(client!.orderSummary.lastOrderDate)}
+                  </p>
+                  {client!.orderSummary.lastOrderStatus && (
+                    <p className="mt-0.5 font-sans text-[11px] text-[#64748B]">
+                      {client!.orderSummary.lastOrderStatus}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Alertas */}
+          {client!.alertas.length > 0 && (
+            <section className="mb-4">
+              <h3 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wide text-[#475569]">
+                Alertas activas
+              </h3>
+              <ul className="flex flex-col gap-2">
+                {client!.alertas.map((alerta) => (
+                  <li
+                    key={alerta.alertaId}
+                    className="rounded-xl border border-[#E2E8F0] bg-white px-3 py-2.5"
+                    data-testid="client-detail-alerta"
+                  >
+                    <div className="flex items-start gap-2">
+                      <AlertaBadge severidad={alerta.severidad} />
+                      <div className="min-w-0">
+                        <p className="font-sans text-xs font-medium text-[#0F172A]">
+                          {alerta.titulo}
+                        </p>
+                        {alerta.tipoPlaga && (
+                          <p className="font-sans text-[11px] text-[#64748B]">{alerta.tipoPlaga}</p>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Parcelas */}
+          <section>
+            <h3 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wide text-[#475569]">
+              Parcelas ({client!.parcelas.length})
+            </h3>
+            {client!.parcelas.length === 0 ? (
+              <p className="font-sans text-sm italic text-[#94A3B8]">Sin parcelas registradas.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {client!.parcelas.map((p) => (
+                  <li key={p.parcelaId}>
+                    <ParcelaCard parcela={p} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
-      </div>
+      )}
     </aside>
   );
 }

@@ -1,56 +1,95 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ClientDetailDrawer } from './ClientDetailDrawer';
-import type { EnrichedClient } from '../../services/clients/clientsAggregator';
+import type { ClientDetail } from '../../services/sales/salesClientsService';
 
-const sampleClient: EnrichedClient = {
-  clientId: '7',
+const sampleClient: ClientDetail = {
   farmerId: 7,
-  clientName: 'Rancho Las Flores',
-  lat: 19.4326,
-  lng: -99.1332,
-  totalOrders: 2,
-  totalSpent: 1234.5,
-  lastOrderDate: '2025-04-15T10:00:00',
-  lastOrderStatus: 'Entregado',
-  statuses: ['Entregado', 'Pendiente'],
-  orders: [
+  userId: 7,
+  name: 'Rancho Las Flores',
+  email: 'rancho@example.com',
+  isActive: true,
+  latitude: 19.4326,
+  longitude: -99.1332,
+  state: 'CDMX',
+  municipality: 'Cuauhtémoc',
+  locality: null,
+  property: null,
+  parcelas: [
     {
-      orderId: 100,
-      orderDate: '2025-04-15T10:00:00',
-      orderStatusId: 1,
-      orderStatusName: 'Entregado',
-      totalAmount: 1000,
+      parcelaId: 1,
+      nombreParcela: 'Parcela Norte',
+      tamanoHectareas: 5.2,
+      tipoCultivo: 'Maíz',
+      estadoParcela: 'Activa',
+      sistemaRiego: 'Goteo',
+      phSuelo: 6.5,
+      fechaSiembra: '2025-01-10',
+      fechaCosecha: '2025-08-15',
     },
     {
-      orderId: 99,
-      orderDate: '2025-02-10T10:00:00',
-      orderStatusId: 2,
-      orderStatusName: 'Pendiente',
-      totalAmount: 234.5,
+      parcelaId: 2,
+      nombreParcela: 'Parcela Sur',
+      tamanoHectareas: 3.0,
+      tipoCultivo: 'Trigo',
+      estadoParcela: 'En reposo',
+      sistemaRiego: null,
+      phSuelo: null,
+      fechaSiembra: null,
+      fechaCosecha: null,
     },
   ],
+  alertas: [
+    {
+      alertaId: 10,
+      titulo: 'Plaga detectada en zona norte',
+      tipoPlaga: 'Chapulín',
+      severidad: 'critico',
+      hectareas: 2.5,
+      createdAt: '2025-05-01T10:00:00',
+      statusId: 1,
+      statusName: 'Activa',
+      isActive: true,
+    },
+  ],
+  orderSummary: {
+    totalOrders: 2,
+    totalAmount: 1234.5,
+    lastOrderDate: '2025-04-15T10:00:00',
+    lastOrderStatus: 'Entregado',
+  },
 };
 
 describe('ClientDetailDrawer', () => {
-  it('renders nothing when client is null', () => {
+  it('renders nothing when client is null and not loading', () => {
     const { container } = render(
       <ClientDetailDrawer client={null} onClose={() => {}} />,
     );
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders the drawer with client name and metrics', () => {
+  it('renders the drawer when a client is provided', () => {
     render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
     expect(screen.getByTestId('client-detail-drawer')).toBeInTheDocument();
     expect(screen.getByText('Rancho Las Flores')).toBeInTheDocument();
+  });
+
+  it('shows order summary metrics', () => {
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('lists every order in the history', () => {
+  it('lists all parcelas', () => {
     render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
-    const rows = screen.getAllByTestId('client-detail-order');
-    expect(rows).toHaveLength(2);
+    const cards = screen.getAllByTestId('client-detail-parcela');
+    expect(cards).toHaveLength(2);
+  });
+
+  it('lists all alertas', () => {
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    const items = screen.getAllByTestId('client-detail-alerta');
+    expect(items).toHaveLength(1);
+    expect(screen.getByText('Plaga detectada en zona norte')).toBeInTheDocument();
   });
 
   it('calls onClose when clicking the close button', () => {
@@ -67,15 +106,19 @@ describe('ClientDetailDrawer', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('shows an empty-history message when there are no orders', () => {
-    const noOrders: EnrichedClient = { ...sampleClient, orders: [], totalOrders: 0 };
-    render(<ClientDetailDrawer client={noOrders} onClose={() => {}} />);
-    expect(screen.getByText(/sin pedidos registrados/i)).toBeInTheDocument();
+  it('shows empty parcelas message when there are none', () => {
+    const noData: ClientDetail = { ...sampleClient, parcelas: [], alertas: [] };
+    render(<ClientDetailDrawer client={noData} onClose={() => {}} />);
+    expect(screen.getByText(/sin parcelas registradas/i)).toBeInTheDocument();
   });
 
-  it('displays last order status when present', () => {
+  it('shows loading spinner when isLoading is true and client is null', () => {
+    render(<ClientDetailDrawer client={null} isLoading onClose={() => {}} />);
+    expect(screen.getByTestId('client-detail-drawer')).toBeInTheDocument();
+  });
+
+  it('displays severity badge for alertas', () => {
     render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
-    // 'Entregado' appears in both the summary section and the order history badge
-    expect(screen.getAllByText('Entregado').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Crítico')).toBeInTheDocument();
   });
 });
