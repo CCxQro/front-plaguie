@@ -32,11 +32,13 @@ function ClientesPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#F9FAFB] font-sans" data-testid="clientes-panel">
+
+      {/* Page header */}
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] bg-white px-8 py-5">
         <div>
           <h1 className="text-2xl font-semibold text-[#0F172A]">Mapa de Clientes</h1>
           <p className="text-sm text-[#64748B]">
-            Visualiza y filtra a los agricultores con los que has trabajado.
+            Selecciona un agricultor en el mapa para ver su detalle.
           </p>
         </div>
         <button
@@ -49,7 +51,10 @@ function ClientesPanel() {
         </button>
       </header>
 
+      {/* Three-column body: filters | map | detail */}
       <div className="flex min-h-0 flex-1 gap-4 p-6">
+
+        {/* Left: filters */}
         <ClientFilters
           value={filters}
           availableStatuses={availableStatuses}
@@ -59,7 +64,8 @@ function ClientesPanel() {
           onReset={() => setFilters(emptyFilters)}
         />
 
-        <main className="relative flex min-h-0 flex-1 flex-col">
+        {/* Center: map */}
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
           {isLoading ? (
             <div
               className="flex h-full items-center justify-center rounded-lg border border-[#E2E8F0] bg-white"
@@ -104,13 +110,15 @@ function ClientesPanel() {
             />
           )}
         </main>
-      </div>
 
-      <ClientDetailDrawer
-        client={selectedClient}
-        isOpen={!!selectedClient}
-        onClose={() => setSelectedClientId(null)}
-      />
+        {/* Right: detail panel — appears inline, does not cover the map */}
+        {selectedClient && (
+          <ClientDetailDrawer
+            client={selectedClient}
+            onClose={() => setSelectedClientId(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }

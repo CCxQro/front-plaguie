@@ -33,50 +33,49 @@ const sampleClient: EnrichedClient = {
 };
 
 describe('ClientDetailDrawer', () => {
-  it('renders nothing when closed', () => {
-    const { container } = render(
-      <ClientDetailDrawer client={sampleClient} isOpen={false} onClose={() => {}} />,
-    );
-    expect(container.firstChild).toBeNull();
-  });
-
   it('renders nothing when client is null', () => {
     const { container } = render(
-      <ClientDetailDrawer client={null} isOpen onClose={() => {}} />,
+      <ClientDetailDrawer client={null} onClose={() => {}} />,
     );
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the drawer with client name and metrics', () => {
-    render(<ClientDetailDrawer client={sampleClient} isOpen onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
     expect(screen.getByTestId('client-detail-drawer')).toBeInTheDocument();
     expect(screen.getByText('Rancho Las Flores')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument(); // total orders
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('lists every order in the history', () => {
-    render(<ClientDetailDrawer client={sampleClient} isOpen onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
     const rows = screen.getAllByTestId('client-detail-order');
     expect(rows).toHaveLength(2);
   });
 
   it('calls onClose when clicking the close button', () => {
     const onClose = vi.fn();
-    render(<ClientDetailDrawer client={sampleClient} isOpen onClose={onClose} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />);
     fireEvent.click(screen.getByTestId('client-detail-close'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onClose when clicking the overlay', () => {
+  it('calls onClose when pressing Escape', () => {
     const onClose = vi.fn();
-    render(<ClientDetailDrawer client={sampleClient} isOpen onClose={onClose} />);
-    fireEvent.click(screen.getByTestId('client-detail-overlay'));
+    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />);
+    fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows an empty-history message when there are no orders', () => {
     const noOrders: EnrichedClient = { ...sampleClient, orders: [], totalOrders: 0 };
-    render(<ClientDetailDrawer client={noOrders} isOpen onClose={() => {}} />);
-    expect(screen.getByText(/aún no tiene pedidos/i)).toBeInTheDocument();
+    render(<ClientDetailDrawer client={noOrders} onClose={() => {}} />);
+    expect(screen.getByText(/sin pedidos registrados/i)).toBeInTheDocument();
+  });
+
+  it('displays last order status when present', () => {
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    // 'Entregado' appears in both the summary section and the order history badge
+    expect(screen.getAllByText('Entregado').length).toBeGreaterThanOrEqual(1);
   });
 });
