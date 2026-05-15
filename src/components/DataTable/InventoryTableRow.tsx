@@ -11,10 +11,12 @@ export interface InventoryTableRowData {
   category: string;
   categoryColor: string;
   price: string;
+  unitValue?: number;
   stock: number;
   stockMax: number;
   stockState: InventoryStockState;
   stockLabel?: string;
+  unitName?: string;
   imageUrl?: string;
   imagePath?: string;
 }
@@ -113,6 +115,12 @@ export function InventoryTableRow({ row, onView, onEdit, onDelete }: InventoryTa
             <p className={`text-xs leading-4 ${stockStyles.helper}`}>{row.stockLabel}</p>
           )}
         </div>
+      </td>
+
+      <td className="px-6 py-4 align-middle text-sm text-[#475569]">
+        {row.unitValue !== undefined && row.unitName
+          ? `${row.unitValue} ${row.unitName}`
+          : row.unitName || (row.unitValue !== undefined ? String(row.unitValue) : '—')}
       </td>
 
       <td className="px-6 py-4 align-middle">

@@ -73,6 +73,10 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
   }
 
   if (isCompact) {
+    const iconBg = (data.iconBg as string | undefined) ?? '#DBEAFE';
+    const iconColor = (data.iconColor as string | undefined) ?? '#155DFC';
+    const valueColor = (data.valueColor as string | undefined) ?? '#101828';
+
     return (
       <section
         className={cx(
@@ -83,10 +87,20 @@ export function MetricCard({ data, fieldMap, variant = 'default', className, ...
         {...props}
       >
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-content-center rounded-[10px] bg-[#DBEAFE] text-[#155DFC]">{icon ?? '◈'}</div>
+          <div
+            className="grid h-10 w-10 place-content-center rounded-[10px] bg-(--ib) text-(--ic)"
+            style={{ ['--ib' as string]: iconBg, ['--ic' as string]: iconColor } as React.CSSProperties}
+          >
+            {icon ?? '◈'}
+          </div>
           <div>
             <p className="text-sm text-[#4A5565]">{title}</p>
-            <p className="text-2xl font-bold leading-8 text-[#101828]">{String(value)}</p>
+            <p
+              className="text-2xl font-bold leading-8 text-(--vc)"
+              style={{ ['--vc' as string]: valueColor } as React.CSSProperties}
+            >
+              {String(value)}
+            </p>
           </div>
         </div>
       </section>

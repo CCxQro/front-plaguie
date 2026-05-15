@@ -10,15 +10,31 @@ import type {
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import type { Product } from '../types/Product';
+import {
+  getDisplayPrice,
+  getStockState,
+  STOCK_LOW_THRESHOLD,
+} from '../services/products/inventoryHelpers';
 
-function formatPrice(value: number) {
-  return `$${value.toFixed(2)}`;
+const STOCK_MAX_BAR = 100;
+
+function toLegacyStockState(stock: number): InventoryStockState {
+  if (stock <= 0) return 'agotado';
+  if (stock <= STOCK_LOW_THRESHOLD) return 'bajo';
+  return 'ok';
 }
 
 function toRow(product: Product, categoryColor: string): InventoryTableRowData {
-  const stock = 0;
-  const stockMax = 100;
-  const stockState: InventoryStockState = 'agotado';
+  const stock = product.stock;
+  const stockState = toLegacyStockState(stock);
+  const stockLabel =
+    stock <= 0
+      ? 'Agotado'
+      : getStockState(stock) === 'critico'
+        ? 'Stock crítico'
+        : getStockState(stock) === 'bajo'
+          ? 'Stock bajo'
+          : 'Stock normal';
 
   return {
     id: String(product.skuSellerId),
@@ -26,11 +42,15 @@ function toRow(product: Product, categoryColor: string): InventoryTableRowData {
     sku: product.sku,
     category: product.categoryName,
     categoryColor,
-    price: formatPrice(product.unitValue),
+    price: getDisplayPrice(product),
+    unitValue: product.unitValue,
     stock,
-    stockMax,
+    stockMax: Math.max(stock, STOCK_MAX_BAR),
     stockState,
-    stockLabel: 'Sin datos de stock',
+    stockLabel,
+    unitName: product.unitName
+      ? product.unitName + (product.unitValue > 1 ? 's' : '')
+      : undefined,
     imagePath: product.firebaseImageId || undefined,
   };
 }
