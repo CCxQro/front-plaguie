@@ -61,8 +61,9 @@ export function DataTable({
             <col className="w-1/12" />
             <col className="w-3/12" />
             <col className="w-2/12" />
+            <col className="w-1/12" />
             <col className="w-2/12" />
-            <col className="w-2/12" />
+            <col className="w-1/12" />
             <col className="w-2/12" />
           </colgroup>
           <thead className="bg-[#F8FAFC]">
@@ -72,13 +73,14 @@ export function DataTable({
               <Th>Categoría</Th>
               <Th>Precio</Th>
               <Th>Stock</Th>
+              <Th>Unidad</Th>
               <Th align="right">Acciones</Th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center text-sm text-[#64748B]">
+                <td colSpan={7} className="px-6 py-10 text-center text-sm text-[#64748B]">
                   {emptyText}
                 </td>
               </tr>

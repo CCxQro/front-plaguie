@@ -15,6 +15,9 @@ export interface Product {
   statusId: number;
   statusName: string;
   firebaseImageId: string;
+  latestPrice: string | null;
+  latestPriceDate: string | null;
+  stock: number;
 }
 
 export interface CreateProductPayload {
@@ -28,6 +31,28 @@ export interface CreateProductPayload {
   description: string;
   statusId: number;
   firebaseImageId: string;
+  price: string;
+  stock: number;
+}
+
+export interface UpdateProductPayload {
+  name?: string;
+  sku?: string;
+  categoryId?: number;
+  providerId?: number;
+  unitValue?: number;
+  unitId?: number;
+  description?: string;
+  statusId?: number;
+  firebaseImageId?: string;
+  price?: string | null;
+  stock?: number | null;
+}
+
+export interface ProductFilters {
+  sellerId?: number;
+  providerId?: number;
+  statusId?: number;
 }
 
 export interface Category {

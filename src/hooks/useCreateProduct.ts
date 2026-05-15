@@ -14,6 +14,8 @@ export interface CreateProductInput {
   unitValue: number;
   unitId: number;
   description: string;
+  price: string;
+  stock: number;
   onProgress?: (percent: number) => void;
 }
 
@@ -25,11 +27,9 @@ export function useCreateProduct() {
       const uid = auth.currentUser?.uid;
       if (!uid) throw new Error('No autenticado. Por favor inicia sesión de nuevo.');
 
-      // 1. Upload image — path becomes the firebaseImageId
       const storagePath = `users/${uid}/${Date.now()}_${input.imageFile.name}`;
       await uploadFile(input.imageFile, storagePath, input.onProgress);
 
-      // 2. Create product with the storage path as firebaseImageId
       const payload: CreateProductPayload = {
         sellerId: input.sellerId,
         name: input.name,
@@ -41,6 +41,8 @@ export function useCreateProduct() {
         description: input.description,
         statusId: 1,
         firebaseImageId: storagePath,
+        price: input.price,
+        stock: input.stock,
       };
 
       await createProduct(payload);

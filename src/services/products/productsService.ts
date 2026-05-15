@@ -3,9 +3,11 @@ import type {
   Category,
   CreateProductPayload,
   Product,
+  ProductFilters,
   Provider,
   TechnicalSeller,
   Unit,
+  UpdateProductPayload,
 } from '../../types/Product';
 
 export async function getCategories(): Promise<Category[]> {
@@ -33,7 +35,24 @@ export async function createProduct(payload: CreateProductPayload): Promise<Prod
   return data;
 }
 
-export async function getProducts(): Promise<Product[]> {
-  const { data } = await backendClient.get<Product[]>('/api/products');
+export async function updateProduct(
+  skuSellerId: number,
+  payload: UpdateProductPayload,
+): Promise<Product> {
+  const { data } = await backendClient.put<Product>(`/api/products/${skuSellerId}`, payload);
+  return data;
+}
+
+export async function deleteProduct(skuSellerId: number): Promise<void> {
+  await backendClient.delete(`/api/products/${skuSellerId}`);
+}
+
+export async function getProducts(filters: ProductFilters = {}): Promise<Product[]> {
+  const params: Record<string, number> = {};
+  if (filters.sellerId !== undefined) params.sellerId = filters.sellerId;
+  else if (filters.providerId !== undefined) params.providerId = filters.providerId;
+  else if (filters.statusId !== undefined) params.statusId = filters.statusId;
+
+  const { data } = await backendClient.get<Product[]>('/api/products', { params });
   return data;
 }

@@ -19,6 +19,7 @@ interface FormState {
   categoryId: string;
   providerId: string;
   unitValue: string;
+  price: string;
   stockActual: string;
   unitId: string;
 }
@@ -30,6 +31,7 @@ const EMPTY_FORM: FormState = {
   categoryId: '',
   providerId: '',
   unitValue: '',
+  price: '',
   stockActual: '',
   unitId: '',
 };
@@ -88,7 +90,11 @@ export function NuevoProductoModal({ onClose }: Props) {
     if (!form.providerId) errors.providerId = 'Requerido';
     if (!form.unitId) errors.unitId = 'Requerido';
     if (!form.unitValue || isNaN(Number(form.unitValue)) || Number(form.unitValue) <= 0)
-      errors.unitValue = 'Precio inválido';
+      errors.unitValue = 'Valor inválido';
+    if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0)
+      errors.price = 'Precio inválido';
+    if (form.stockActual === '' || isNaN(Number(form.stockActual)) || Number(form.stockActual) < 0)
+      errors.stockActual = 'Stock inválido';
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -106,6 +112,8 @@ export function NuevoProductoModal({ onClose }: Props) {
         unitValue: Number(form.unitValue),
         unitId: Number(form.unitId),
         description: form.description.trim(),
+        price: Number(form.price).toFixed(5),
+        stock: Number(form.stockActual),
         onProgress: setUploadProgress,
       },
       { onSuccess: () => setTimeout(onClose, 800) },
@@ -220,9 +228,9 @@ export function NuevoProductoModal({ onClose }: Props) {
               </Field>
             </div>
 
-            {/* Row 3: Precio + Stock Actual + Unidad */}
-            <div className="grid grid-cols-3 gap-4">
-              <Field label="Precio" required error={fieldErrors.unitValue}>
+            {/* Row 3: Valor Unitario + Precio */}
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Valor Unitario" required error={fieldErrors.unitValue}>
                 <input
                   type="number"
                   min="0"
@@ -234,6 +242,22 @@ export function NuevoProductoModal({ onClose }: Props) {
                   className={inputCls(!!fieldErrors.unitValue)}
                 />
               </Field>
+              <Field label="Precio" required error={fieldErrors.price}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.00001"
+                  value={form.price}
+                  onChange={(e) => handleField('price', e.target.value)}
+                  placeholder="0"
+                  disabled={loading}
+                  className={inputCls(!!fieldErrors.price)}
+                />
+              </Field>
+            </div>
+
+            {/* Row 4: Stock Actual + Unidad */}
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Stock Actual" required error={fieldErrors.stockActual}>
                 <input
                   type="number"
