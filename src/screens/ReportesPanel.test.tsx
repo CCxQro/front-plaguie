@@ -62,6 +62,8 @@ describe('ReportesPanel', () => {
           suggestedProduct: 'Imidacloprid',
         },
       ],
+      hotspots: [],
+      recommendations: [],
     });
 
     render(<ReportesPanel />, { wrapper: createWrapper() });
@@ -85,6 +87,8 @@ describe('ReportesPanel', () => {
       observationsAnalyzed: 0,
       executiveSummary: null,
       predictions: [],
+      hotspots: [],
+      recommendations: [],
     });
     mockPdf.mockResolvedValueOnce(new Blob(['%PDF-1.4'], { type: 'application/pdf' }));
 

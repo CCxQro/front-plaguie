@@ -3,6 +3,8 @@ import { PredictiveReportFilters } from '../components/PredictiveReport/Predicti
 import { PredictiveReportSummary } from '../components/PredictiveReport/PredictiveReportSummary';
 import { PredictivePredictionsTable } from '../components/PredictiveReport/PredictivePredictionsTable';
 import { PredictiveReportDownloads } from '../components/PredictiveReport/PredictiveReportDownloads';
+import { PredictiveHotspotsCard } from '../components/PredictiveReport/PredictiveHotspotsCard';
+import { PredictiveRecommendationsCard } from '../components/PredictiveReport/PredictiveRecommendationsCard';
 import { usePredictivePestReport } from '../hooks/usePredictivePestReport';
 import {
   buildReportFilename,
@@ -130,6 +132,8 @@ function ReportesPanel() {
 
           <PredictiveReportSummary report={report} />
           <PredictivePredictionsTable predictions={report.predictions ?? []} />
+          <PredictiveHotspotsCard hotspots={report.hotspots ?? []} />
+          <PredictiveRecommendationsCard recommendations={report.recommendations ?? []} />
         </section>
       )}
 

@@ -19,6 +19,14 @@ export interface PredictivePestPredictionItem {
   suggestedProduct: string | null;
 }
 
+export interface PredictiveHotspot {
+  municipio: string;
+  estado: string | null;
+  observaciones: number;
+  plagasDistintas: number;
+  nivelRiesgo: string;
+}
+
 export interface PredictivePestReport {
   region: string;
   season: string;
@@ -26,6 +34,8 @@ export interface PredictivePestReport {
   observationsAnalyzed: number;
   executiveSummary: string | null;
   predictions: PredictivePestPredictionItem[];
+  hotspots: PredictiveHotspot[];
+  recommendations: string[];
 }
 
 export interface PredictiveReportQuery {
