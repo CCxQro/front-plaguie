@@ -9,6 +9,7 @@ export interface FilterState {
   onlyWithActiveAlerts: boolean;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const emptyFilterState: FilterState = {
   search: '',
   cultivo: '',
