@@ -1,8 +1,7 @@
 import CategoryBadge from '../CategoryBadge/CategoryBadge';
+import { useFirebaseImageUrl } from '../../hooks/useFirebaseImageUrl';
 import { DataTableActionIcon } from './DataTableIcons';
 
-export type InventoryTableRowVariant = 'completa' | 'compacta';
-export type InventoryCategoryTone = 'fungicidas' | 'insecticidas' | 'fertilizantes' | 'herbicidas';
 export type InventoryStockState = 'ok' | 'bajo' | 'agotado';
 
 export interface InventoryTableRowData {
@@ -10,24 +9,24 @@ export interface InventoryTableRowData {
   product: string;
   sku: string;
   category: string;
-  categoryTone: InventoryCategoryTone;
+  categoryColor: string;
   price: string;
+  unitValue?: number;
   stock: number;
   stockMax: number;
   stockState: InventoryStockState;
   stockLabel?: string;
+  unitName?: string;
   imageUrl?: string;
+  imagePath?: string;
 }
 
 export interface InventoryTableRowProps {
   row: InventoryTableRowData;
-  variant?: InventoryTableRowVariant;
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
-
-const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(' ');
 
 const STOCK_STYLES: Record<InventoryStockState, { bar: string; helper: string }> = {
   ok: { bar: 'bg-[#00C950]', helper: 'text-[#008236]' },
@@ -35,82 +34,100 @@ const STOCK_STYLES: Record<InventoryStockState, { bar: string; helper: string }>
   agotado: { bar: 'bg-[#FB2C36]', helper: 'text-[#E7000B]' },
 };
 
-function ActionButton({ onClick, children }: { onClick?: () => void; children: React.ReactNode }) {
+function RowImage({
+  imageUrl,
+  imagePath,
+  alt,
+}: {
+  imageUrl?: string;
+  imagePath?: string;
+  alt: string;
+}) {
+  const { data: resolvedUrl } = useFirebaseImageUrl(imageUrl ? undefined : imagePath);
+  const src = imageUrl ?? resolvedUrl;
+
+  return (
+    <div className="grid h-12 w-12 place-content-center overflow-hidden rounded-xl bg-[#F1F5F9]">
+      {src ? (
+        <img src={src} alt={alt} className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-lg text-[#94A3B8]">📦</span>
+      )}
+    </div>
+  );
+}
+
+function ActionButton({
+  icon,
+  onClick,
+}: {
+  icon: 'ver' | 'editar' | 'eliminar';
+  onClick?: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="grid h-8 w-8 place-content-center rounded-[10px] bg-transparent transition-colors hover:bg-[#F8FAFC]"
+      className="grid h-8 w-8 place-content-center rounded-xl transition-colors hover:bg-[#F8FAFC]"
     >
-      {children}
+      <DataTableActionIcon icon={icon} className="h-4 w-4 text-[#475569]" />
     </button>
   );
 }
 
-export function InventoryTableRow({ row, variant = 'completa', onView, onEdit, onDelete }: InventoryTableRowProps) {
+export function InventoryTableRow({ row, onView, onEdit, onDelete }: InventoryTableRowProps) {
   const stockStyles = STOCK_STYLES[row.stockState];
-  const fillWidth = row.stockMax > 0 ? Math.max(0, Math.min(100, (row.stock / row.stockMax) * 100)) : 0;
-  const compact = variant === 'compacta';
+  const fillWidth =
+    row.stockMax > 0 ? Math.max(0, Math.min(100, (row.stock / row.stockMax) * 100)) : 0;
 
   return (
-    <tr className={cx('border-b border-[#F1F5F9]', compact && 'h-18.5')} data-testid="inventory-table-row">
-      {!compact ? (
-        <td className="px-6 py-4 align-middle">
-          <div className="grid h-12 w-12 place-content-center overflow-hidden rounded-[10px] bg-[#F1F5F9]">
-            {row.imageUrl ? (
-              <img src={row.imageUrl} alt={row.product} className="h-12 w-12 object-cover" />
-            ) : (
-              <span className="text-lg text-[#94A3B8]">📦</span>
-            )}
-          </div>
-        </td>
-      ) : null}
-
-      <td className={cx('align-middle', compact ? 'px-6 py-4' : 'px-6 py-4')}>
-        <p className="text-sm font-bold leading-5 text-[#0F172B]">{row.product}</p>
-        <p className="text-xs leading-4 text-[#62748E]">SKU: {row.sku}</p>
+    <tr className="border-b border-[#F1F5F9]" data-testid="inventory-table-row">
+      <td className="px-6 py-4 align-middle">
+        <RowImage imageUrl={row.imageUrl} imagePath={row.imagePath} alt={row.product} />
       </td>
 
       <td className="px-6 py-4 align-middle">
-        <CategoryBadge
-          label={row.category}
-          color={
-            row.categoryTone === 'fungicidas'
-              ? '#8200DB'
-              : row.categoryTone === 'insecticidas'
-                ? '#1447E6'
-                : row.categoryTone === 'fertilizantes'
-                  ? '#008236'
-                  : '#CA3500'
-          }
-          width={compact ? 'w-auto' : 'w-auto'}
-          height={compact ? 'h-5' : 'h-6'}
-        />
+        <p className="truncate text-sm font-bold leading-5 text-[#0F172B]">{row.product}</p>
+        <p className="truncate text-xs leading-4 text-[#62748E]">SKU: {row.sku}</p>
       </td>
 
-      <td className="px-6 py-4 align-middle text-sm font-bold leading-5 text-[#0F172B]">{row.price}</td>
+      <td className="px-6 py-4 align-middle">
+        <CategoryBadge label={row.category} color={row.categoryColor} />
+      </td>
 
-      <td className={cx('px-6 py-4 align-middle', compact ? 'min-w-55' : '')}>
-        <div className={cx('flex items-center gap-3', compact && 'flex-col items-start gap-1')}>
-          <div className={cx('h-2 overflow-hidden rounded-full bg-[#F1F5F9]', compact ? 'w-28.75' : 'w-28.75')}>
-            <div className={cx('h-2 rounded-full w-(--fill)', stockStyles.bar, `[--fill:${fillWidth}%]`)} />
+      <td className="px-6 py-4 align-middle text-sm font-bold leading-5 text-[#0F172B]">
+        {row.price}
+      </td>
+
+      <td className="px-6 py-4 align-middle">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-[#F1F5F9]">
+              <div
+                className={`h-full rounded-full ${stockStyles.bar} w-(--fill) [--fill:${fillWidth}%]`}
+              />
+            </div>
+            <span className="text-sm font-bold leading-5 text-[#0F172B] tabular-nums">
+              {row.stock}
+            </span>
           </div>
-          <span className="text-sm font-bold leading-5 text-[#0F172B]">{row.stock}</span>
+          {row.stockLabel && (
+            <p className={`text-xs leading-4 ${stockStyles.helper}`}>{row.stockLabel}</p>
+          )}
         </div>
-        {row.stockLabel ? <p className={cx('mt-1 text-xs leading-4', stockStyles.helper)}>{row.stockLabel}</p> : null}
+      </td>
+
+      <td className="px-6 py-4 align-middle text-sm text-[#475569]">
+        {row.unitValue !== undefined && row.unitName
+          ? `${row.unitValue} ${row.unitName}`
+          : row.unitName || (row.unitValue !== undefined ? String(row.unitValue) : '—')}
       </td>
 
       <td className="px-6 py-4 align-middle">
         <div className="flex justify-end gap-2">
-          <ActionButton onClick={() => onView?.(row.id)}>
-            <DataTableActionIcon icon="ver" className="block h-4 w-4 text-[#475569]" />
-          </ActionButton>
-          <ActionButton onClick={() => onEdit?.(row.id)}>
-            <DataTableActionIcon icon="editar" className="block h-4 w-4 text-[#475569]" />
-          </ActionButton>
-          <ActionButton onClick={() => onDelete?.(row.id)}>
-            <DataTableActionIcon icon="eliminar" className="block h-4 w-4 text-[#475569]" />
-          </ActionButton>
+          <ActionButton icon="ver" onClick={() => onView?.(row.id)} />
+          <ActionButton icon="editar" onClick={() => onEdit?.(row.id)} />
+          <ActionButton icon="eliminar" onClick={() => onDelete?.(row.id)} />
         </div>
       </td>
     </tr>
