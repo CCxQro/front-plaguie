@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 interface CategoryBadgeProps {
   label: string;
   color: string;
@@ -19,7 +21,8 @@ export default function CategoryBadge({ label, color, width = 'w-auto', height =
   const bg = hexToRgba(color, 0.12);
   return (
     <span
-      className={`inline-flex items-center justify-center px-3 ${width} ${height} rounded-full font-inter font-bold text-xs leading-4 whitespace-nowrap text-(--badge-color) bg-(--badge-bg) [--badge-color:${color}] [--badge-bg:${bg}]`}
+      className={`inline-flex items-center justify-center px-3 ${width} ${height} rounded-full font-bold text-xs leading-4 whitespace-nowrap text-(--badge-color) bg-(--badge-bg)`}
+      style={{ '--badge-color': color, '--badge-bg': bg } as CSSProperties}
       data-testid="category-badge"
     >
       {label}

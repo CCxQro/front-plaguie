@@ -174,6 +174,18 @@ function ProductosPanel() {
           rows={filteredRows}
           title="Inventario"
           headerActionText={headerActionText}
+          onView={(id) => {
+            const name = filteredRows.find((r) => r.id === id)?.product;
+            console.log('ver', { id, name });
+          }}
+          onEdit={(id) => {
+            const name = filteredRows.find((r) => r.id === id)?.product;
+            console.log('editar', { id, name });
+          }}
+          onDelete={(id) => {
+            const name = filteredRows.find((r) => r.id === id)?.product;
+            console.log('eliminar', { id, name });
+          }}
           pageText={`Pagina 1 de ${Math.max(1, Math.ceil(filteredRows.length / 10))}`}
           emptyText={
             error
