@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SearchIcon } from '../components/Icons/SearchIcon';
 import { ChevronDownIcon } from '../components/Icons/ChevronDownIcon';
 import { NuevoProductoModal } from '../components/NuevoProductoModal/NuevoProductoModal';
+import { VerProductoModal } from '../components/VerProductoModal/VerProductoModal';
 import { DataTable } from '../components/DataTable/DataTable';
 import type {
   InventoryStockState,
@@ -9,6 +10,7 @@ import type {
 } from '../components/DataTable/InventoryTableRow';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
+import { useTechnicalSellerId } from '../hooks/useTechnicalSellerId';
 import type { Product } from '../types/Product';
 import {
   getDisplayPrice,
@@ -60,8 +62,25 @@ function ProductosPanel() {
   const [category, setCategory] = useState('');
   const [stockFilter, setStockFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [viewProductId, setViewProductId] = useState<number | null>(null);
 
-  const { data: products = [], isLoading, error } = useProducts();
+  const {
+    data: technicalSellerId,
+    isLoading: isLoadingSellerId,
+    error: sellerIdError,
+  } = useTechnicalSellerId();
+
+  const {
+    data: products = [],
+    isLoading: isLoadingProducts,
+    error: productsError,
+  } = useProducts(
+    technicalSellerId ? { sellerId: technicalSellerId } : {},
+    { enabled: !!technicalSellerId },
+  );
+
+  const isLoading = isLoadingSellerId || isLoadingProducts;
+  const error = sellerIdError ?? productsError;
   const { data: categories = [] } = useCategories();
 
   const categoryColorById = useMemo(
@@ -174,10 +193,7 @@ function ProductosPanel() {
           rows={filteredRows}
           title="Inventario"
           headerActionText={headerActionText}
-          onView={(id) => {
-            const name = filteredRows.find((r) => r.id === id)?.product;
-            console.log('ver', { id, name });
-          }}
+          onView={(id) => setViewProductId(Number(id))}
           onEdit={(id) => {
             const name = filteredRows.find((r) => r.id === id)?.product;
             console.log('editar', { id, name });
@@ -198,6 +214,13 @@ function ProductosPanel() {
       </div>
 
       {showModal && <NuevoProductoModal onClose={() => setShowModal(false)} />}
+
+      {viewProductId !== null && (
+        <VerProductoModal
+          skuSellerId={viewProductId}
+          onClose={() => setViewProductId(null)}
+        />
+      )}
     </div>
   );
 }

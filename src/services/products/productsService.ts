@@ -30,6 +30,11 @@ export async function getTechnicalSellerByUserId(userId: number): Promise<Techni
   return data;
 }
 
+export async function getProductById(skuSellerId: number): Promise<Product> {
+  const { data } = await backendClient.get<Product>(`/api/products/${skuSellerId}`);
+  return data;
+}
+
 export async function createProduct(payload: CreateProductPayload): Promise<Product> {
   const { data } = await backendClient.post<Product>('/api/products', payload);
   return data;
