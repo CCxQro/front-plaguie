@@ -3,6 +3,7 @@ import { SearchIcon } from '../components/Icons/SearchIcon';
 import { ChevronDownIcon } from '../components/Icons/ChevronDownIcon';
 import { NuevoProductoModal } from '../components/NuevoProductoModal/NuevoProductoModal';
 import { VerProductoModal } from '../components/VerProductoModal/VerProductoModal';
+import { EditarProductoModal } from '../components/EditarProductoModal/EditarProductoModal';
 import { DataTable } from '../components/DataTable/DataTable';
 import type {
   InventoryStockState,
@@ -63,6 +64,7 @@ function ProductosPanel() {
   const [stockFilter, setStockFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [viewProductId, setViewProductId] = useState<number | null>(null);
+  const [editProductId, setEditProductId] = useState<number | null>(null);
 
   const {
     data: technicalSellerId,
@@ -194,10 +196,7 @@ function ProductosPanel() {
           title="Inventario"
           headerActionText={headerActionText}
           onView={(id) => setViewProductId(Number(id))}
-          onEdit={(id) => {
-            const name = filteredRows.find((r) => r.id === id)?.product;
-            console.log('editar', { id, name });
-          }}
+          onEdit={(id) => setEditProductId(Number(id))}
           onDelete={(id) => {
             const name = filteredRows.find((r) => r.id === id)?.product;
             console.log('eliminar', { id, name });
@@ -219,6 +218,13 @@ function ProductosPanel() {
         <VerProductoModal
           skuSellerId={viewProductId}
           onClose={() => setViewProductId(null)}
+        />
+      )}
+
+      {editProductId !== null && (
+        <EditarProductoModal
+          skuSellerId={editProductId}
+          onClose={() => setEditProductId(null)}
         />
       )}
     </div>
