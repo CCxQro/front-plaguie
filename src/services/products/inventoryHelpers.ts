@@ -44,8 +44,7 @@ export function formatPriceDecimal5(value: number): string {
 }
 
 export function getDisplayPrice(product: Product): string {
-  if (product.latestPrice != null) return formatPriceUSD(product.latestPrice);
-  return formatPriceUSD(product.unitValue);
+  return formatPriceUSD(product.latestPrice);
 }
 
 export interface ProductFilterOptions {

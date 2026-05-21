@@ -117,12 +117,6 @@ export function InventoryTableRow({ row, onView, onEdit, onDelete }: InventoryTa
         </div>
       </td>
 
-      <td className="px-6 py-4 align-middle text-sm text-[#475569]">
-        {row.unitValue !== undefined && row.unitName
-          ? `${row.unitValue} ${row.unitName}`
-          : row.unitName || (row.unitValue !== undefined ? String(row.unitValue) : '—')}
-      </td>
-
       <td className="px-6 py-4 align-middle">
         <div className="flex justify-end gap-2">
           <ActionButton icon="ver" onClick={() => onView?.(row.id)} />

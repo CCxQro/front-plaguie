@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { SearchIcon } from '../components/Icons/SearchIcon';
 import { ChevronDownIcon } from '../components/Icons/ChevronDownIcon';
 import { NuevoProductoModal } from '../components/NuevoProductoModal/NuevoProductoModal';
+import { VerProductoModal } from '../components/VerProductoModal/VerProductoModal';
+import { EditarProductoModal } from '../components/EditarProductoModal/EditarProductoModal';
 import { DataTable } from '../components/DataTable/DataTable';
 import type {
   InventoryStockState,
@@ -9,6 +11,7 @@ import type {
 } from '../components/DataTable/InventoryTableRow';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
+import { useTechnicalSellerId } from '../hooks/useTechnicalSellerId';
 import type { Product } from '../types/Product';
 import {
   getDisplayPrice,
@@ -60,8 +63,26 @@ function ProductosPanel() {
   const [category, setCategory] = useState('');
   const [stockFilter, setStockFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [viewProductId, setViewProductId] = useState<number | null>(null);
+  const [editProductId, setEditProductId] = useState<number | null>(null);
 
-  const { data: products = [], isLoading, error } = useProducts();
+  const {
+    data: technicalSellerId,
+    isLoading: isLoadingSellerId,
+    error: sellerIdError,
+  } = useTechnicalSellerId();
+
+  const {
+    data: products = [],
+    isLoading: isLoadingProducts,
+    error: productsError,
+  } = useProducts(
+    technicalSellerId ? { sellerId: technicalSellerId } : {},
+    { enabled: !!technicalSellerId },
+  );
+
+  const isLoading = isLoadingSellerId || isLoadingProducts;
+  const error = sellerIdError ?? productsError;
   const { data: categories = [] } = useCategories();
 
   const categoryColorById = useMemo(
@@ -174,6 +195,12 @@ function ProductosPanel() {
           rows={filteredRows}
           title="Inventario"
           headerActionText={headerActionText}
+          onView={(id) => setViewProductId(Number(id))}
+          onEdit={(id) => setEditProductId(Number(id))}
+          onDelete={(id) => {
+            const name = filteredRows.find((r) => r.id === id)?.product;
+            console.log('eliminar', { id, name });
+          }}
           pageText={`Pagina 1 de ${Math.max(1, Math.ceil(filteredRows.length / 10))}`}
           emptyText={
             error
@@ -186,6 +213,20 @@ function ProductosPanel() {
       </div>
 
       {showModal && <NuevoProductoModal onClose={() => setShowModal(false)} />}
+
+      {viewProductId !== null && (
+        <VerProductoModal
+          skuSellerId={viewProductId}
+          onClose={() => setViewProductId(null)}
+        />
+      )}
+
+      {editProductId !== null && (
+        <EditarProductoModal
+          skuSellerId={editProductId}
+          onClose={() => setEditProductId(null)}
+        />
+      )}
     </div>
   );
 }
