@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { SidebarVerde } from '../components/Sidebar/SidebarVerde';
 import useAuthStore from '../services/Contexts/useAuthStore';
+import { getInitials } from '../utils/getInitials';
 import type { SidebarItem } from '../components/Sidebar/Sidebar';
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
@@ -10,13 +11,6 @@ const SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'validacion', label: 'Validación de Registros', icon: 'validacion', href: '/app/validacion' },
   { id: 'dashboards', label: 'Dashboards', icon: 'dashboards', href: '/app/dashboards' },
 ];
-
-function getInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 'AP';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
-}
 
 export default function AdminLayout() {
   const { user, logout } = useAuthStore();
