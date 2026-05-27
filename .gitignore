@@ -37,3 +37,6 @@ storybook-static
 .claude/
 .agents/
 CLAUDE.md
+
+coverage/
+.github/
