@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ValidacionPanel from './ValidacionPanel';
-import useAuthStore from '../services/Contexts/useAuthStore';
 import type { AlertaDto } from '../services/alertas/alertasService';
 import type { RecomendacionDto } from '../services/recomendaciones/recomendacionesService';
 import type { VigilanciaFitosanitariaDto } from '../services/vigilancia/vigilanciaService';
@@ -33,6 +32,17 @@ vi.mock('../hooks/useRecomendaciones', () => ({
   useRecomendaciones: mocks.useRecomendaciones,
   useValidateRecomendacion: mocks.useValidateRecomendacion,
 }));
+
+vi.mock('../services/Contexts/useAuthStore', () => {
+  const useAuthStore = vi.fn((selector: (s: { user: { userId: number; name: string; email: string; roleId: number } | null; token: string | null; isAuthenticated: boolean }) => unknown) =>
+    selector({
+      user: { userId: 1, name: 'Admin Plaguie', email: 'admin@plaguie.test', roleId: 1 },
+      token: 'test-token',
+      isAuthenticated: true,
+    })
+  );
+  return { default: useAuthStore };
+});
 
 const BASE_VIGILANCIAS: VigilanciaFitosanitariaDto[] = [
   {
@@ -156,16 +166,6 @@ beforeEach(() => {
   mocks.validateAlerta.mockResolvedValue(BASE_ALERTAS[0]);
   mocks.validateRecomendacion.mockResolvedValue(BASE_RECOMENDACIONES[0]);
   setupHookMocks();
-  useAuthStore.setState({
-    user: {
-      userId: 1,
-      name: 'Admin Plaguie',
-      email: 'admin@plaguie.test',
-      roleId: 1,
-    },
-    token: 'test-token',
-    isAuthenticated: true,
-  });
 });
 
 describe('ValidacionPanel', () => {
