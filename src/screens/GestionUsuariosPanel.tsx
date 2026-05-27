@@ -7,35 +7,38 @@ import { PowerIcon } from '../components/Icons/PowerIcon';
 import { DataTableActionIcon } from '../components/DataTable/DataTableIcons';
 import {
   getUsers,
-  getUserById,
   registerUser,
   updateUserById,
   deactivateUserById,
 } from '../services/admin/users';
-import type { AdminUser, RegisterUserPayload, UpdateUserPayload, UserListParams } from '../types/AdminUser';
+import { getInitials } from '../utils/getInitials';
+import type { DataUser, RegisterUserPayload, UpdateUserPayload, UserListParams } from '../types/DataUser';
+import { roleBadgeClasses, roleIdToLabel } from './GestionUsuarios/roleUtils';
+import UserDetailModal from './GestionUsuarios/UserDetailModal';
+import CreateUserModal from './GestionUsuarios/CreateUserModal';
+import EditUserModal from './GestionUsuarios/EditUserModal';
+import ConfirmDeactivateModal from './GestionUsuarios/ConfirmDeactivateModal';
+import type { CreateForm } from './GestionUsuarios/CreateUserModal';
 
 const PAGE_SIZE = 10;
 
-type RoleLabel = 'Administrador' | 'Agricultor' | 'Técnico Vendedor';
+const EMPTY_LOCATION_FORM = {
+  stateName: '',
+  municipalityName: '',
+  localityName: '',
+  propertyName: '',
+  latitude: '',
+  longitude: '',
+};
 
-function roleIdToLabel(roleId: number): RoleLabel {
-  if (roleId === 1) return 'Administrador';
-  if (roleId === 2) return 'Agricultor';
-  return 'Técnico Vendedor';
-}
-
-function roleBadgeClasses(roleId: number): string {
-  if (roleId === 1) return 'bg-[#EFF6FF] text-[#1D4ED8]';
-  if (roleId === 2) return 'bg-[#DCFCE7] text-[#016630]';
-  return 'bg-[#F3E8FF] text-[#6D28D9]';
-}
-
-function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 'AP';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
-}
+const EMPTY_CREATE_FORM: CreateForm = {
+  name: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  roleId: 3,
+  location: EMPTY_LOCATION_FORM,
+};
 
 function GestionUsuariosPanel() {
   const queryClient = useQueryClient();
@@ -47,22 +50,12 @@ function GestionUsuariosPanel() {
   const [page, setPage] = useState(0);
 
   const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [viewingUserId, setViewingUserId] = useState<number | null>(null);
-  const [confirmTarget, setConfirmTarget] = useState<AdminUser | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<DataUser | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    roleId: 3,
-  });
-  const [editForm, setEditForm] = useState({
-    name: '',
-    roleId: 3,
-    isActive: true,
-  });
+  const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_CREATE_FORM);
 
   const queryParams: UserListParams = {
     page,
@@ -87,19 +80,12 @@ function GestionUsuariosPanel() {
   const totalElements = data?.totalElements ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  const { data: viewingUser, isLoading: isLoadingDetail } = useQuery({
-    queryKey: ['user', viewingUserId],
-    queryFn: () => getUserById(viewingUserId!),
-    enabled: viewingUserId !== null,
-    staleTime: 60 * 1000,
-  });
-
   const createMutation = useMutation({
     mutationFn: (payload: RegisterUserPayload) => registerUser(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
       setIsCreatingUser(false);
-      setCreateForm({ name: '', email: '', password: '', roleId: 3 });
+      setCreateForm(EMPTY_CREATE_FORM);
       setFormError(null);
     },
     onError: (error) =>
@@ -111,7 +97,8 @@ function GestionUsuariosPanel() {
       updateUserById(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
-      setEditingUser(null);
+      void queryClient.invalidateQueries({ queryKey: ['user'] });
+      setEditingUserId(null);
       setFormError(null);
     },
     onError: (error) =>
@@ -140,15 +127,14 @@ function GestionUsuariosPanel() {
   const listErrorMessage = listError instanceof Error ? listError.message : null;
 
   const openCreateModal = () => {
-    setCreateForm({ name: '', email: '', password: '', roleId: 3 });
+    setCreateForm(EMPTY_CREATE_FORM);
     setFormError(null);
     setIsCreatingUser(true);
   };
 
-  const openEditModal = (user: AdminUser) => {
-    setEditForm({ name: user.name, roleId: user.roleId, isActive: user.isActive });
+  const openEditModal = (user: DataUser) => {
     setFormError(null);
-    setEditingUser(user);
+    setEditingUserId(user.userId);
   };
 
   const handleNameChange = (value: string) => {
@@ -171,41 +157,72 @@ function GestionUsuariosPanel() {
       setFormError('Nombre, correo y contraseña son obligatorios');
       return;
     }
-    createMutation.mutate({
+
+    if (!createForm.confirmPassword) {
+      setFormError('Debes confirmar la contraseña');
+      return;
+    }
+
+    if (createForm.password !== createForm.confirmPassword) {
+      setFormError('Las contraseñas no coinciden');
+      return;
+    }
+
+    const payload: RegisterUserPayload = {
       name: createForm.name.trim(),
       email: createForm.email.trim(),
       password: createForm.password,
       roleId: createForm.roleId,
-    });
+    };
+
+    if (createForm.roleId !== 1) {
+      const stateName = createForm.location.stateName.trim();
+      const municipalityName = createForm.location.municipalityName.trim();
+      const localityName = createForm.location.localityName.trim();
+      const propertyName = createForm.location.propertyName.trim();
+      const latitude = parseFloat(createForm.location.latitude);
+      const longitude = parseFloat(createForm.location.longitude);
+
+      if (
+        !stateName ||
+        !municipalityName ||
+        !localityName ||
+        !propertyName ||
+        Number.isNaN(latitude) ||
+        Number.isNaN(longitude)
+      ) {
+        setFormError('La ubicación es obligatoria para este rol');
+        return;
+      }
+
+      payload.location = {
+        stateName,
+        municipalityName,
+        localityName,
+        propertyName,
+        latitude,
+        longitude,
+      };
+    }
+
+    createMutation.mutate(payload);
   };
 
-  const handleSaveEditUser = () => {
-    if (!editingUser) return;
-    if (!editForm.name.trim()) {
+  const handleSaveEditUser = (payload: UpdateUserPayload) => {
+    if (!editingUserId) return;
+    if (!payload.name?.trim()) {
       setFormError('El nombre es obligatorio');
       return;
     }
-    updateMutation.mutate({
-      id: editingUser.userId,
-      payload: {
-        name: editForm.name.trim(),
-        roleId: editForm.roleId,
-        isActive: editForm.isActive,
-      },
-    });
+    updateMutation.mutate({ id: editingUserId, payload });
   };
 
-  const handleToggleActive = (user: AdminUser) => {
+  const handleToggleActive = (user: DataUser) => {
     if (user.isActive) {
       setConfirmTarget(user);
     } else {
       reactivateMutation.mutate(user.userId);
     }
-  };
-
-  const handleConfirmDeactivate = () => {
-    if (!confirmTarget) return;
-    deactivateMutation.mutate(confirmTarget.userId);
   };
 
   const isMutating =
@@ -435,306 +452,44 @@ function GestionUsuariosPanel() {
         </main>
       </div>
 
-      {/* User Detail Modal */}
       {viewingUserId !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-          <div
-            className="w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6"
-            data-testid="user-detail-modal"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#101828]">Detalle del Usuario</h2>
-              <button
-                type="button"
-                onClick={() => setViewingUserId(null)}
-                aria-label="Cerrar detalle"
-                className="grid h-9 w-9 place-content-center rounded-[10px] hover:bg-[#F3F4F6]"
-              >
-                ✕
-              </button>
-            </div>
-
-            {isLoadingDetail || !viewingUser ? (
-              <p className="py-8 text-center text-sm text-[#6A7282]">Cargando...</p>
-            ) : (
-              <div className="space-y-5">
-                <div className="flex items-center gap-4">
-                  <div className="grid h-16 w-16 shrink-0 place-content-center rounded-full bg-[linear-gradient(135deg,#05DF72_0%,#00A63E_100%)] text-xl font-semibold text-white">
-                    {getInitials(viewingUser.name)}
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold text-[#101828]">{viewingUser.name}</p>
-                    <p className="text-sm text-[#4A5565]">{viewingUser.email}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 rounded-[10px] border border-[#E5E7EB] p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#6A7282]">Rol</span>
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${roleBadgeClasses(viewingUser.roleId)}`}
-                    >
-                      {roleIdToLabel(viewingUser.roleId)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-[#6A7282]">Estado</span>
-                    <span
-                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
-                        viewingUser.isActive
-                          ? 'bg-[#DCFCE7] text-[#016630]'
-                          : 'bg-[#F3F4F6] text-[#1E2939]'
-                      }`}
-                    >
-                      <span
-                        className={`h-1.5 w-1.5 rounded-full ${viewingUser.isActive ? 'bg-[#00C950]' : 'bg-[#6A7282]'}`}
-                      />
-                      {viewingUser.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="shrink-0 text-sm font-medium text-[#6A7282]">ID</span>
-                    <span className="truncate font-mono text-xs text-[#4A5565]">
-                      {viewingUser.firebaseUuid}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setViewingUserId(null)}
-                className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] text-base font-medium text-[#364153] hover:bg-[#F9FAFB]"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
+        <UserDetailModal
+          userId={viewingUserId}
+          onClose={() => setViewingUserId(null)}
+        />
       ) : null}
 
-      {/* Create User Modal */}
       {isCreatingUser ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-          <div
-            className="w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6"
-            data-testid="create-user-modal"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#101828]">Crear Nuevo Usuario</h2>
-              <button
-                type="button"
-                onClick={() => setIsCreatingUser(false)}
-                aria-label="Cerrar modal"
-                className="grid h-9 w-9 place-content-center rounded-[10px] hover:bg-[#F3F4F6]"
-              >
-                ✕
-              </button>
-            </div>
-
-            {formError ? <p className="mb-4 text-sm text-[#E7000B]">{formError}</p> : null}
-
-            <div className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">
-                  Nombre Completo
-                </span>
-                <input
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Ej. Juan Pérez"
-                  className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] px-4 text-base outline-none focus:ring-2 focus:ring-[#00A63E]/15"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">
-                  Correo Electrónico
-                </span>
-                <input
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="juan.perez@empresa.com"
-                  className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] px-4 text-base outline-none focus:ring-2 focus:ring-[#00A63E]/15"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">Contraseña</span>
-                <input
-                  type="password"
-                  value={createForm.password}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  placeholder="Contraseña"
-                  className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] px-4 text-base outline-none focus:ring-2 focus:ring-[#00A63E]/15"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">Rol</span>
-                <select
-                  value={createForm.roleId}
-                  onChange={(e) =>
-                    setCreateForm((prev) => ({ ...prev, roleId: Number(e.target.value) }))
-                  }
-                  className="h-9.75 w-full rounded-[10px] border border-[#D1D5DC] px-3 text-sm outline-none"
-                >
-                  <option value={1}>Administrador</option>
-                  <option value={2}>Agricultor</option>
-                  <option value={3}>Técnico Vendedor</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setIsCreatingUser(false)}
-                className="h-10.5 flex-1 rounded-[10px] border border-[#D1D5DC] text-base font-medium text-[#364153]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateUser}
-                disabled={createMutation.isPending}
-                className="h-10.5 flex-1 rounded-[10px] bg-[#00A63E] text-base font-medium text-white hover:bg-[#008c35] disabled:opacity-60"
-              >
-                {createMutation.isPending ? 'Guardando...' : 'Guardar Usuario'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateUserModal
+          form={createForm}
+          formError={formError}
+          isPending={createMutation.isPending}
+          onChange={(patch) => setCreateForm((prev) => ({ ...prev, ...patch }))}
+          onLocationChange={(patch) =>
+            setCreateForm((prev) => ({ ...prev, location: { ...prev.location, ...patch } }))
+          }
+          onSave={handleCreateUser}
+          onClose={() => setIsCreatingUser(false)}
+        />
       ) : null}
 
-      {/* Edit User Modal */}
-      {editingUser ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
-          <div
-            className="w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6"
-            data-testid="edit-user-modal"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#101828]">Editar Usuario</h2>
-              <button
-                type="button"
-                onClick={() => setEditingUser(null)}
-                aria-label="Cerrar modal"
-                className="grid h-9 w-9 place-content-center rounded-[10px] hover:bg-[#F3F4F6]"
-              >
-                ✕
-              </button>
-            </div>
-
-            {formError ? <p className="mb-4 text-sm text-[#E7000B]">{formError}</p> : null}
-
-            <div className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">
-                  Nombre Completo
-                </span>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] px-4 text-base outline-none focus:ring-2 focus:ring-[#00A63E]/15"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[#364153]">Rol</span>
-                <select
-                  value={editForm.roleId}
-                  onChange={(e) =>
-                    setEditForm((prev) => ({ ...prev, roleId: Number(e.target.value) }))
-                  }
-                  disabled={editingUser.roleId === 2}
-                  className="h-9.75 w-full rounded-[10px] border border-[#D1D5DC] px-3 text-sm outline-none disabled:opacity-60"
-                >
-                  <option value={1}>Administrador</option>
-                  <option value={2}>Agricultor</option>
-                  <option value={3}>Técnico Vendedor</option>
-                </select>
-                {editingUser.roleId === 2 ? (
-                  <p className="mt-1 text-xs text-[#6A7282]">
-                    El rol Agricultor no puede ser modificado.
-                  </p>
-                ) : null}
-              </label>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[#364153]">Usuario activo</span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={editForm.isActive}
-                  onClick={() => setEditForm((prev) => ({ ...prev, isActive: !prev.isActive }))}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
-                    editForm.isActive ? 'bg-[#00A63E]' : 'bg-[#D1D5DC]'
-                  }`}
-                >
-                  <span
-                    className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                      editForm.isActive ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setEditingUser(null)}
-                className="h-10.5 flex-1 rounded-[10px] border border-[#D1D5DC] text-base font-medium text-[#364153]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveEditUser}
-                disabled={updateMutation.isPending}
-                className="h-10.5 flex-1 rounded-[10px] bg-[#00A63E] text-base font-medium text-white hover:bg-[#008c35] disabled:opacity-60"
-              >
-                {updateMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {editingUserId !== null ? (
+        <EditUserModal
+          userId={editingUserId}
+          formError={formError}
+          isPending={updateMutation.isPending}
+          onSave={handleSaveEditUser}
+          onClose={() => setEditingUserId(null)}
+        />
       ) : null}
 
-      {/* Confirm Deactivate Modal */}
       {confirmTarget ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6"
-            data-testid="confirm-deactivate-modal"
-          >
-            <h2 className="text-[20px] font-bold leading-7 text-[#101828]">
-              Desactivar Usuario
-            </h2>
-            <p className="mt-4 text-base text-[#4A5565]">
-              ¿Está seguro que desea desactivar a{' '}
-              <span className="font-medium text-[#101828]">{confirmTarget.name}</span>? El usuario
-              no podrá acceder a la plataforma.
-            </p>
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmTarget(null)}
-                className="h-10.5 flex-1 rounded-[10px] border border-[#D1D5DC] text-base font-medium text-[#364153]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDeactivate}
-                disabled={deactivateMutation.isPending}
-                className="h-10.5 flex-1 rounded-[10px] bg-[#E7000B] text-base font-medium text-white hover:bg-[#c40009] disabled:opacity-60"
-              >
-                {deactivateMutation.isPending ? 'Desactivando...' : 'Desactivar'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDeactivateModal
+          target={confirmTarget}
+          isPending={deactivateMutation.isPending}
+          onConfirm={() => deactivateMutation.mutate(confirmTarget.userId)}
+          onClose={() => setConfirmTarget(null)}
+        />
       ) : null}
     </>
   );

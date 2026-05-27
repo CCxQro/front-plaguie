@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import GestionUsuariosPanel from './GestionUsuariosPanel';
-import type { AdminUser, UserListParams, UsersPage } from '../types/AdminUser';
+import type { DataUser, UserListParams, UsersPage } from '../types/DataUser';
 
 vi.mock('../services/admin/users', () => ({
   getUsers: vi.fn(),
@@ -28,7 +28,7 @@ const mockRegisterUser = vi.mocked(registerUser);
 const mockUpdateUserById = vi.mocked(updateUserById);
 const mockDeactivateUserById = vi.mocked(deactivateUserById);
 
-const ACTIVE_USER: AdminUser = {
+const ACTIVE_USER: DataUser = {
   userId: 1,
   firebaseUuid: 'firebase-uuid-001',
   name: 'Ana García',
@@ -37,7 +37,7 @@ const ACTIVE_USER: AdminUser = {
   isActive: true,
 };
 
-const INACTIVE_USER: AdminUser = {
+const INACTIVE_USER: DataUser = {
   userId: 2,
   firebaseUuid: 'firebase-uuid-002',
   name: 'Carlos López',
@@ -46,7 +46,7 @@ const INACTIVE_USER: AdminUser = {
   isActive: false,
 };
 
-function makePage(content: AdminUser[], params?: Partial<UserListParams>): UsersPage {
+function makePage(content: DataUser[], params?: Partial<UserListParams>): UsersPage {
   return {
     content,
     totalElements: content.length,
@@ -343,7 +343,7 @@ describe('GestionUsuariosPanel', () => {
   });
 
   it('calls registerUser and closes modal on successful create', async () => {
-    const newUser: AdminUser = { ...ACTIVE_USER, userId: 3, name: 'Nuevo Usuario', email: 'nuevo@example.com' };
+    const newUser: DataUser = { ...ACTIVE_USER, userId: 3, name: 'Nuevo Usuario', email: 'nuevo@example.com' };
     mockRegisterUser.mockResolvedValue(newUser);
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
@@ -352,6 +352,13 @@ describe('GestionUsuariosPanel', () => {
     await userEvent.type(screen.getByPlaceholderText('Ej. Juan Pérez'), 'Nuevo Usuario');
     await userEvent.type(screen.getByPlaceholderText('juan.perez@empresa.com'), 'nuevo@example.com');
     await userEvent.type(screen.getByPlaceholderText('Contraseña'), 'password123');
+    await userEvent.type(screen.getByPlaceholderText('Repite la contraseña'), 'password123');
+    await userEvent.type(screen.getByPlaceholderText('Ej. Nuevo León'), 'Nuevo León');
+    await userEvent.type(screen.getByPlaceholderText('Ej. Monterrey'), 'Monterrey');
+    await userEvent.type(screen.getByPlaceholderText('Ej. Centro'), 'Centro');
+    await userEvent.type(screen.getByPlaceholderText('Ej. Rancho San Pedro'), 'Rancho San Pedro');
+    await userEvent.type(screen.getByPlaceholderText('25.6866'), '25.6866');
+    await userEvent.type(screen.getByPlaceholderText('-100.3161'), '-100.3161');
     await userEvent.click(screen.getByText('Guardar Usuario'));
 
     await waitFor(() => {
@@ -360,12 +367,22 @@ describe('GestionUsuariosPanel', () => {
         email: 'nuevo@example.com',
         password: 'password123',
         roleId: 3,
+        location: {
+          stateName: 'Nuevo León',
+          municipalityName: 'Monterrey',
+          localityName: 'Centro',
+          propertyName: 'Rancho San Pedro',
+          latitude: 25.6866,
+          longitude: -100.3161,
+        },
       });
       expect(screen.queryByTestId('create-user-modal')).not.toBeInTheDocument();
     });
   });
 
   it('opens edit modal with user data when edit button is clicked', async () => {
+    mockGetUserById.mockResolvedValue(ACTIVE_USER);
+
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
     await waitFor(() => {
       expect(screen.getAllByTestId('edit-user-button')).toHaveLength(2);
@@ -375,22 +392,29 @@ describe('GestionUsuariosPanel', () => {
 
     expect(screen.getByTestId('edit-user-modal')).toBeInTheDocument();
     expect(screen.getByText('Editar Usuario')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Ana García')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Ana García')).toBeInTheDocument();
+    });
   });
 
   it('closes edit modal on cancel', async () => {
+    mockGetUserById.mockResolvedValue(ACTIVE_USER);
+
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
     await waitFor(() => {
       expect(screen.getAllByTestId('edit-user-button')).toHaveLength(2);
     });
 
     await userEvent.click(screen.getAllByTestId('edit-user-button')[0]);
+    await waitFor(() => screen.getByDisplayValue('Ana García'));
     await userEvent.click(screen.getByText('Cancelar'));
     expect(screen.queryByTestId('edit-user-modal')).not.toBeInTheDocument();
   });
 
   it('calls updateUserById on save edit', async () => {
-    const updated = { ...ACTIVE_USER, name: 'Ana Modificada' };
+    const adminUser = { ...ACTIVE_USER, roleId: 1 };
+    const updated = { ...adminUser, name: 'Ana Modificada' };
+    mockGetUserById.mockResolvedValue(adminUser);
     mockUpdateUserById.mockResolvedValue(updated);
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
@@ -400,11 +424,7 @@ describe('GestionUsuariosPanel', () => {
 
     await userEvent.click(screen.getAllByTestId('edit-user-button')[0]);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('edit-user-modal')).toBeInTheDocument();
-    });
-
-    const nameInput = screen.getByDisplayValue('Ana García');
+    const nameInput = await screen.findByDisplayValue('Ana García');
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, 'Ana Modificada');
     await userEvent.click(screen.getByText('Guardar Cambios'));
@@ -440,7 +460,9 @@ describe('GestionUsuariosPanel', () => {
     await userEvent.click(screen.getAllByTestId('view-user-button')[0]);
 
     await waitFor(() => {
-      expect(screen.getByText(ACTIVE_USER.firebaseUuid)).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId('user-detail-modal')).getByText(ACTIVE_USER.email),
+      ).toBeInTheDocument();
     });
     expect(screen.getAllByText('Ana García').length).toBeGreaterThan(0);
   });
@@ -550,9 +572,11 @@ describe('GestionUsuariosPanel', () => {
   });
 
   it('disables role select for Agricultor in edit modal', async () => {
+    const agricultorUser = { ...ACTIVE_USER, roleId: 2 };
     mockGetUsers.mockImplementation(async (params: UserListParams) =>
-      makePage([{ ...ACTIVE_USER, roleId: 2 }], params),
+      makePage([agricultorUser], params),
     );
+    mockGetUserById.mockResolvedValue(agricultorUser);
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
     await waitFor(() => {
@@ -561,10 +585,12 @@ describe('GestionUsuariosPanel', () => {
 
     await userEvent.click(screen.getAllByTestId('edit-user-button')[0]);
 
-    const roleSelect = within(screen.getByTestId('edit-user-modal')).getByRole('combobox');
-    expect(roleSelect).toBeDisabled();
-    expect(
-      screen.getByText('El rol Agricultor no puede ser modificado.'),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      const roleSelect = within(screen.getByTestId('edit-user-modal')).getByRole('combobox');
+      expect(roleSelect).toBeDisabled();
+      expect(
+        screen.getByText('El rol Agricultor no puede ser modificado.'),
+      ).toBeInTheDocument();
+    });
   });
 });

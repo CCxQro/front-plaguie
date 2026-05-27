@@ -11,9 +11,9 @@ interface FarmerLocationResponse {
   farmerId: number;
   farmerName: string;
   orderId: number;
-  latitude: number;
-  longitude: number;
-  locationId: number;
+  latitude: number | null;
+  longitude: number | null;
+  locationId: number | null;
 }
 
 export async function getClientLocations(): Promise<ClientLocation[]> {
@@ -25,6 +25,8 @@ export async function getClientLocations(): Promise<ClientLocation[]> {
   for (const r of data) {
     if (seen.has(r.farmerId)) continue;
     seen.add(r.farmerId);
+    // Skip clients whose location has not been set in the database yet
+    if (r.latitude == null || r.longitude == null) continue;
     locations.push({
       clientId: String(r.farmerId),
       clientName: r.farmerName,

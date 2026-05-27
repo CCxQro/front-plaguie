@@ -16,6 +16,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [fieldType, setFieldType] = useState('password');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(() => {
     const flash = sessionStorage.getItem('login-flash');
     if (flash) {
@@ -33,6 +34,7 @@ const Login: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const { user, token } = await login(email, password);
       authLogin(user, token);
@@ -44,11 +46,21 @@ const Login: React.FC = () => {
       } else {
         setErrorMessage('Correo o contraseña incorrectos. Inténtalo de nuevo.');
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-auto bg-[#F6F7F7] flex">
+    <div className="min-h-screen w-auto bg-[#F6F7F7] flex relative">
+      {isSubmitting && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="flex flex-col items-center gap-4 rounded-2xl bg-white px-10 py-8 shadow-xl">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#75C79E] border-t-transparent" />
+            <p className="text-sm font-medium text-[#64748B]">Iniciando sesión...</p>
+          </div>
+        </div>
+      )}
 
     {/* Left Side */}
     <div className="w-2/3 min-h-screen bg-[rgba(117,199,158,0.1)] flex justify-center items-center relative overflow-hidden">
@@ -169,9 +181,9 @@ const Login: React.FC = () => {
 
             {/* Submit Button */}
             <CustomButton
-              title="Iniciar Sesión"
+              title={isSubmitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               onPress={() => console.log('Button Pressed inside form')}
-              enabled={true}
+              enabled={!isSubmitting}
               bgColor="bg-[#75C79E]"
               fgColor="text-[#0F172A]"
             />

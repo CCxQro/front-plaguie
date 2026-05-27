@@ -90,4 +90,17 @@ describe('getClientLocations', () => {
     mockGet.mockRejectedValue(new Error('Network error'));
     await expect(getClientLocations()).rejects.toThrow('Network error');
   });
+
+  it('skips entries with null latitude or longitude', async () => {
+    mockGet.mockResolvedValue({
+      data: [
+        { farmerId: 1, farmerName: 'No Location', orderId: 1, latitude: null, longitude: null, locationId: null },
+        { farmerId: 2, farmerName: 'Has Location', orderId: 2, latitude: 20.0, longitude: -100.0, locationId: 5 },
+        { farmerId: 3, farmerName: 'Partial', orderId: 3, latitude: 19.5, longitude: null, locationId: 6 },
+      ],
+    });
+    const result = await getClientLocations();
+    expect(result).toHaveLength(1);
+    expect(result[0].clientId).toBe('2');
+  });
 });
