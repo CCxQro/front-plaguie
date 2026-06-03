@@ -18,7 +18,7 @@ function PendingAccountsPanel() {
   const [confirm, setConfirm] = useState<{ farmer: PendingFarmer; action: PendingAction } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: pending = [], isLoading } = useQuery({
+  const { data: pending = [], isLoading, error: queryError } = useQuery({
     queryKey: ['pendingFarmers'],
     queryFn: getPendingFarmers,
     staleTime: 60 * 1000,
@@ -47,11 +47,8 @@ function PendingAccountsPanel() {
     onError: (e) => setError(e instanceof Error ? e.message : 'No se pudo rechazar la cuenta'),
   });
 
-  if (isLoading || pending.length === 0) {
-    return null;
-  }
-
   const isMutating = approveMutation.isPending || rejectMutation.isPending;
+  const queryErrorMessage = queryError instanceof Error ? queryError.message : null;
 
   const handleConfirm = () => {
     if (!confirm?.farmer.user) return;
@@ -81,6 +78,15 @@ function PendingAccountsPanel() {
 
       {error ? <p className="mb-3 text-sm text-[#E7000B]">{error}</p> : null}
 
+      {queryErrorMessage ? (
+        <p className="text-sm text-[#E7000B]">{queryErrorMessage}</p>
+      ) : isLoading ? (
+        <p className="text-sm text-[#6A7282]">Cargando cuentas pendientes...</p>
+      ) : pending.length === 0 ? (
+        <p data-testid="pending-accounts-empty" className="text-sm text-[#6A7282]">
+          No hay cuentas pendientes de aprobación.
+        </p>
+      ) : (
       <ul className="flex flex-col gap-3">
         {pending.map((farmer) => (
           <li
@@ -130,6 +136,7 @@ function PendingAccountsPanel() {
           </li>
         ))}
       </ul>
+      )}
 
       {confirm ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
