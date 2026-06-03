@@ -18,6 +18,7 @@ import UserDetailModal from './GestionUsuarios/UserDetailModal';
 import CreateUserModal from './GestionUsuarios/CreateUserModal';
 import EditUserModal from './GestionUsuarios/EditUserModal';
 import ConfirmDeactivateModal from './GestionUsuarios/ConfirmDeactivateModal';
+import ConfirmActivateModal from './GestionUsuarios/ConfirmActivateModal';
 import type { CreateForm } from './GestionUsuarios/CreateUserModal';
 
 const PAGE_SIZE = 10;
@@ -53,6 +54,7 @@ function GestionUsuariosPanel() {
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [viewingUserId, setViewingUserId] = useState<number | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<DataUser | null>(null);
+  const [confirmActivateTarget, setConfirmActivateTarget] = useState<DataUser | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateForm>(EMPTY_CREATE_FORM);
@@ -119,6 +121,7 @@ function GestionUsuariosPanel() {
     mutationFn: (id: number) => updateUserById(id, { isActive: true }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['users'] });
+      setConfirmActivateTarget(null);
     },
     onError: (error) =>
       setFormError(error instanceof Error ? error.message : 'No se pudo reactivar usuario'),
@@ -221,7 +224,7 @@ function GestionUsuariosPanel() {
     if (user.isActive) {
       setConfirmTarget(user);
     } else {
-      reactivateMutation.mutate(user.userId);
+      setConfirmActivateTarget(user);
     }
   };
 
@@ -489,6 +492,15 @@ function GestionUsuariosPanel() {
           isPending={deactivateMutation.isPending}
           onConfirm={() => deactivateMutation.mutate(confirmTarget.userId)}
           onClose={() => setConfirmTarget(null)}
+        />
+      ) : null}
+
+      {confirmActivateTarget ? (
+        <ConfirmActivateModal
+          target={confirmActivateTarget}
+          isPending={reactivateMutation.isPending}
+          onConfirm={() => reactivateMutation.mutate(confirmActivateTarget.userId)}
+          onClose={() => setConfirmActivateTarget(null)}
         />
       ) : null}
     </>
