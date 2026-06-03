@@ -28,6 +28,21 @@ export interface DataUserDetail extends DataUser {
   location?: UserLocation;
 }
 
+/** Farmer account awaiting administrator approval (status = Revision).
+ *  Shape matches the backend `Farmer` JSON from GET /api/users/farmers/pending. */
+export interface PendingFarmer {
+  farmerId: number;
+  active: boolean;
+  statusId: number | null;
+  statusName: string | null;
+  user: {
+    userId: number;
+    name: string;
+    email: string;
+    roleId: number;
+  } | null;
+}
+
 export interface UpdateLocationPayload {
   stateName?: string;
   municipalityName?: string;

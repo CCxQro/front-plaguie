@@ -12,6 +12,9 @@ vi.mock('../services/admin/users', () => ({
   registerUser: vi.fn(),
   updateUserById: vi.fn(),
   deactivateUserById: vi.fn(),
+  getPendingFarmers: vi.fn(),
+  approveFarmer: vi.fn(),
+  rejectFarmer: vi.fn(),
 }));
 
 import {
@@ -20,6 +23,7 @@ import {
   registerUser,
   updateUserById,
   deactivateUserById,
+  getPendingFarmers,
 } from '../services/admin/users';
 
 const mockGetUsers = vi.mocked(getUsers);
@@ -27,6 +31,7 @@ const mockGetUserById = vi.mocked(getUserById);
 const mockRegisterUser = vi.mocked(registerUser);
 const mockUpdateUserById = vi.mocked(updateUserById);
 const mockDeactivateUserById = vi.mocked(deactivateUserById);
+const mockGetPendingFarmers = vi.mocked(getPendingFarmers);
 
 const ACTIVE_USER: DataUser = {
   userId: 1,
@@ -70,6 +75,7 @@ function createWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGetPendingFarmers.mockResolvedValue([]);
   mockGetUsers.mockImplementation(async (params: UserListParams) => {
     const all = [ACTIVE_USER, INACTIVE_USER];
     const nameQ = params.name?.toLowerCase();

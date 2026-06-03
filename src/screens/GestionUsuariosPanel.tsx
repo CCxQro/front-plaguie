@@ -19,6 +19,7 @@ import CreateUserModal from './GestionUsuarios/CreateUserModal';
 import EditUserModal from './GestionUsuarios/EditUserModal';
 import ConfirmDeactivateModal from './GestionUsuarios/ConfirmDeactivateModal';
 import ConfirmActivateModal from './GestionUsuarios/ConfirmActivateModal';
+import PendingAccountsPanel from './GestionUsuarios/PendingAccountsPanel';
 import type { CreateForm } from './GestionUsuarios/CreateUserModal';
 
 const PAGE_SIZE = 10;
@@ -264,6 +265,8 @@ function GestionUsuariosPanel() {
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-8">
+          <PendingAccountsPanel />
+
           <section className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-[30px] font-bold leading-9 text-[#101828]">
