@@ -6,4 +6,5 @@ export const DEFAULT_SIDEBAR_ITEMS: SidebarItem[] = [
   { id: 'clientes', label: 'Clientes', icon: 'clientes', href: '/sales-technician/clientes' },
   { id: 'productos', label: 'Productos', icon: 'cubo', href: '/sales-technician/productos' },
   { id: 'reportes', label: 'Reportes', icon: 'dashboards', href: '/sales-technician/reportes' },
+  { id: 'regiones', label: 'Regiones', icon: 'mapa', href: '/sales-technician/regiones' },
 ];
