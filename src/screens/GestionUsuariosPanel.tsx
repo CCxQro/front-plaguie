@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 
 import { SearchIcon } from '../components/Icons/SearchIcon';
-import { BellIcon } from '../components/Icons/BellIcon';
 import { PowerIcon } from '../components/Icons/PowerIcon';
 import { DataTableActionIcon } from '../components/DataTable/DataTableIcons';
 import {
@@ -45,7 +44,6 @@ const EMPTY_CREATE_FORM: CreateForm = {
 function GestionUsuariosPanel() {
   const queryClient = useQueryClient();
 
-  const [headerSearch, setHeaderSearch] = useState('');
   const [nameSearch, setNameSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<number | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<boolean | undefined>(undefined);
@@ -241,29 +239,6 @@ function GestionUsuariosPanel() {
   return (
     <>
       <div className="flex flex-1 flex-col bg-[#F9FAFB]" data-testid="gestion-usuarios-panel">
-        <header className="border-b border-[#E5E7EB] bg-white px-8 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <label className="relative block w-full max-w-2xl">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#99A1AF]">
-                <SearchIcon />
-              </span>
-              <input
-                value={headerSearch}
-                onChange={(e) => setHeaderSearch(e.target.value)}
-                placeholder="Buscar en el sistema..."
-                className="h-10.5 w-full rounded-[10px] border border-[#D1D5DC] bg-white pl-10 pr-4 text-base text-[#0A0A0A] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#00A63E]/15"
-              />
-            </label>
-            <button
-              type="button"
-              className="relative grid h-10 w-10 place-content-center rounded-[10px] text-[#4A5565] hover:bg-[#F3F4F6]"
-            >
-              <BellIcon />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#FB2C36]" />
-            </button>
-          </div>
-        </header>
-
         <main className="flex-1 overflow-y-auto px-8 py-8">
           <PendingAccountsPanel />
 
@@ -334,6 +309,7 @@ function GestionUsuariosPanel() {
               <table className="w-full min-w-255 border-collapse" data-testid="users-table">
                 <thead className="bg-[#F9FAFB]">
                   <tr className="border-b border-[#E5E7EB] text-left text-xs uppercase tracking-[0.6px] text-[#6A7282]">
+                    <th className="px-6 py-4 font-medium">#ID</th>
                     <th className="px-6 py-4 font-medium">Nombre</th>
                     <th className="px-6 py-4 font-medium">Email</th>
                     <th className="px-6 py-4 font-medium">Rol</th>
@@ -348,6 +324,11 @@ function GestionUsuariosPanel() {
                       data-testid="user-row"
                       className="border-b border-[#E5E7EB] last:border-b-0"
                     >
+                      <td className="px-6 py-4">
+                        <span className="rounded-md bg-[#F3F4F6] px-2 py-1 text-xs font-mono font-medium text-[#4A5565]">
+                          #{row.userId}
+                        </span>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="grid h-10 w-10 place-content-center rounded-full bg-[linear-gradient(135deg,#05DF72_0%,#00A63E_100%)] text-base font-medium text-white">

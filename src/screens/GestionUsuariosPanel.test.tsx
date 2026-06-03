@@ -540,7 +540,7 @@ describe('GestionUsuariosPanel', () => {
     await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
 
     expect(screen.getByTestId('confirm-activate-modal')).toBeInTheDocument();
-    expect(screen.getByText('Aprobar Usuario')).toBeInTheDocument();
+    expect(screen.getByText('Activar usuario')).toBeInTheDocument();
     expect(screen.getByTestId('confirm-activate-modal')).toHaveTextContent(INACTIVE_USER.name);
     expect(mockUpdateUserById).not.toHaveBeenCalled();
   });
@@ -554,7 +554,7 @@ describe('GestionUsuariosPanel', () => {
     });
 
     await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
-    await userEvent.click(screen.getByText('Aprobar'));
+    await userEvent.click(screen.getByText('Activar'));
 
     await waitFor(() => {
       expect(mockUpdateUserById).toHaveBeenCalledWith(INACTIVE_USER.userId, { isActive: true });

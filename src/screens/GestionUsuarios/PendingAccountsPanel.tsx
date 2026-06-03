@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPendingFarmers, approveFarmer, rejectFarmer } from '../../services/admin/users';
 import type { PendingFarmer } from '../../types/DataUser';
 import { getInitials } from '../../utils/getInitials';
+import PendingFarmerDetailModal from './PendingFarmerDetailModal';
 
 type PendingAction = 'approve' | 'reject';
 
@@ -16,6 +17,7 @@ type PendingAction = 'approve' | 'reject';
 function PendingAccountsPanel() {
   const queryClient = useQueryClient();
   const [confirm, setConfirm] = useState<{ farmer: PendingFarmer; action: PendingAction } | null>(null);
+  const [detailFarmer, setDetailFarmer] = useState<PendingFarmer | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { data: pending = [], isLoading, error: queryError } = useQuery({
@@ -94,18 +96,43 @@ function PendingAccountsPanel() {
             data-testid="pending-account-row"
             className="flex flex-col gap-3 rounded-[10px] border border-[#FDE68A] bg-white p-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-content-center rounded-full bg-[linear-gradient(135deg,#FDE047_0%,#F59E0B_100%)] text-base font-medium text-white">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 grid h-10 w-10 shrink-0 place-content-center rounded-full bg-[linear-gradient(135deg,#FDE047_0%,#F59E0B_100%)] text-base font-medium text-white">
                 {getInitials(farmer.user?.name ?? '?')}
               </div>
-              <div>
-                <p className="text-base font-medium text-[#101828]">
-                  {farmer.user?.name ?? 'Sin nombre'}
-                </p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-base font-medium text-[#101828]">
+                    {farmer.user?.name ?? 'Sin nombre'}
+                  </p>
+                  <span className="rounded-md bg-[#F3F4F6] px-2 py-0.5 font-mono text-xs font-medium text-[#4A5565]">
+                    #F{farmer.farmerId}
+                  </span>
+                </div>
                 <p className="text-sm text-[#6A7282]">{farmer.user?.email ?? ''}</p>
+                <div className="mt-1.5 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center rounded-full bg-[#EFF6FF] px-2.5 py-0.5 text-xs font-medium text-[#1D4ED8]">
+                    Agricultor
+                  </span>
+                  {farmer.statusName ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF9C3] px-2.5 py-0.5 text-xs font-medium text-[#854D0E]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FACC15]" />
+                      {farmer.statusName}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="view-pending-farmer-button"
+                aria-label={`Ver detalle de ${farmer.user?.name ?? ''}`}
+                onClick={() => setDetailFarmer(farmer)}
+                className="h-9 rounded-[10px] border border-[#D1D5DC] px-4 text-sm font-medium text-[#364153] hover:bg-[#F3F4F6]"
+              >
+                Ver detalle
+              </button>
               <button
                 type="button"
                 data-testid="approve-account-button"
@@ -137,6 +164,13 @@ function PendingAccountsPanel() {
         ))}
       </ul>
       )}
+
+      {detailFarmer ? (
+        <PendingFarmerDetailModal
+          farmer={detailFarmer}
+          onClose={() => setDetailFarmer(null)}
+        />
+      ) : null}
 
       {confirm ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">

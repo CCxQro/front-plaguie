@@ -31,6 +31,14 @@ export async function getPendingFarmers(): Promise<PendingFarmer[]> {
   return data;
 }
 
+/** Full farmer record (statusId, statusName, isActive) for a given userId.
+ *  Use when you need the approval status of an agricultor that may no longer be
+ *  in the pending queue (e.g. already rejected or approved). */
+export async function getFarmerByUserId(userId: number): Promise<PendingFarmer> {
+  const { data } = await backendClient.get<PendingFarmer>(`/api/users/farmers/${userId}`);
+  return data;
+}
+
 /** Approve a pending farmer account (status -> Accepted). */
 export async function approveFarmer(userId: number): Promise<void> {
   await backendClient.post(`/api/users/farmers/${userId}/approve`);
