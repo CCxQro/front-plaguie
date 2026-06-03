@@ -525,7 +525,21 @@ describe('GestionUsuariosPanel', () => {
     expect(mockDeactivateUserById).not.toHaveBeenCalled();
   });
 
-  it('calls updateUserById to reactivate when toggle is clicked on inactive user', async () => {
+  it('opens confirm activate modal when toggle is clicked on inactive user', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`)).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+
+    expect(screen.getByTestId('confirm-activate-modal')).toBeInTheDocument();
+    expect(screen.getByText('Aprobar Usuario')).toBeInTheDocument();
+    expect(screen.getByTestId('confirm-activate-modal')).toHaveTextContent(INACTIVE_USER.name);
+    expect(mockUpdateUserById).not.toHaveBeenCalled();
+  });
+
+  it('calls updateUserById to approve on confirm activate', async () => {
     mockUpdateUserById.mockResolvedValue({ ...INACTIVE_USER, isActive: true });
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
@@ -534,11 +548,25 @@ describe('GestionUsuariosPanel', () => {
     });
 
     await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+    await userEvent.click(screen.getByText('Aprobar'));
 
     await waitFor(() => {
       expect(mockUpdateUserById).toHaveBeenCalledWith(INACTIVE_USER.userId, { isActive: true });
+      expect(screen.queryByTestId('confirm-activate-modal')).not.toBeInTheDocument();
     });
-    expect(screen.queryByTestId('confirm-deactivate-modal')).not.toBeInTheDocument();
+  });
+
+  it('cancels activate confirm dialog without approving', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`)).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+    await userEvent.click(screen.getByText('Cancelar'));
+
+    expect(screen.queryByTestId('confirm-activate-modal')).not.toBeInTheDocument();
+    expect(mockUpdateUserById).not.toHaveBeenCalled();
   });
 
   it('shows active/inactive status badges', async () => {
