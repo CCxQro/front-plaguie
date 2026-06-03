@@ -43,21 +43,20 @@ beforeEach(() => {
 });
 
 describe('PendingAccountsPanel', () => {
-  it('renders nothing when there are no pending accounts', async () => {
+  it('shows an empty state when there are no pending accounts', async () => {
     mockGetPendingFarmers.mockResolvedValue([]);
     render(<PendingAccountsPanel />, { wrapper: createWrapper() });
-    await waitFor(() => expect(mockGetPendingFarmers).toHaveBeenCalled());
-    expect(screen.queryByTestId('pending-accounts-panel')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId('pending-accounts-empty')).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('pending-accounts-count')).toHaveTextContent('0');
   });
 
   it('lists pending farmers with a count', async () => {
     mockGetPendingFarmers.mockResolvedValue([PENDING]);
     render(<PendingAccountsPanel />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('pending-accounts-panel')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText('Pedro Campos')).toBeInTheDocument());
     expect(screen.getByTestId('pending-accounts-count')).toHaveTextContent('1');
-    expect(screen.getByText('Pedro Campos')).toBeInTheDocument();
     expect(screen.getByText('pedro@example.com')).toBeInTheDocument();
   });
 
@@ -65,11 +64,8 @@ describe('PendingAccountsPanel', () => {
     mockGetPendingFarmers.mockResolvedValue([PENDING]);
     mockApproveFarmer.mockResolvedValue(undefined);
     render(<PendingAccountsPanel />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('pending-accounts-panel')).toBeInTheDocument(),
-    );
 
-    await userEvent.click(screen.getByTestId('approve-account-button'));
+    await userEvent.click(await screen.findByTestId('approve-account-button'));
     expect(screen.getByTestId('confirm-account-modal')).toBeInTheDocument();
     await userEvent.click(screen.getByTestId('confirm-account-action'));
 
@@ -81,11 +77,8 @@ describe('PendingAccountsPanel', () => {
     mockGetPendingFarmers.mockResolvedValue([PENDING]);
     mockRejectFarmer.mockResolvedValue(undefined);
     render(<PendingAccountsPanel />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('pending-accounts-panel')).toBeInTheDocument(),
-    );
 
-    await userEvent.click(screen.getByTestId('reject-account-button'));
+    await userEvent.click(await screen.findByTestId('reject-account-button'));
     expect(screen.getByTestId('confirm-account-modal')).toBeInTheDocument();
     await userEvent.click(screen.getByTestId('confirm-account-action'));
 
@@ -96,11 +89,8 @@ describe('PendingAccountsPanel', () => {
   it('cancels the confirmation without acting', async () => {
     mockGetPendingFarmers.mockResolvedValue([PENDING]);
     render(<PendingAccountsPanel />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('pending-accounts-panel')).toBeInTheDocument(),
-    );
 
-    await userEvent.click(screen.getByTestId('approve-account-button'));
+    await userEvent.click(await screen.findByTestId('approve-account-button'));
     await userEvent.click(screen.getByText('Cancelar'));
 
     expect(screen.queryByTestId('confirm-account-modal')).not.toBeInTheDocument();
