@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,16 +21,31 @@ function radiusFor(total: number): number {
   return Math.min(10 + total * 4, 30);
 }
 
-function FitBounds({ points }: { points: Array<[number, number]> }) {
+/**
+ * Sets the map's initial view once: centered on the seller's location when
+ * available, otherwise fitted to all zones. Runs a single time so the user can
+ * pan/zoom freely afterwards (filters won't snap the view back).
+ */
+function InitialView({
+  center,
+  points,
+}: {
+  center: [number, number] | null | undefined;
+  points: Array<[number, number]>;
+}) {
   const map = useMap();
+  const done = useRef(false);
   useEffect(() => {
-    if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView(points[0], 8);
-      return;
+    if (done.current) return;
+    if (center) {
+      map.setView(center, 9);
+      done.current = true;
+    } else if (points.length > 0) {
+      if (points.length === 1) map.setView(points[0], 8);
+      else map.fitBounds(L.latLngBounds(points), { padding: [48, 48] });
+      done.current = true;
     }
-    map.fitBounds(L.latLngBounds(points), { padding: [48, 48] });
-  }, [points, map]);
+  }, [center, points, map]);
   return null;
 }
 
@@ -56,9 +71,11 @@ function Legend() {
 export interface PestMapProps {
   zones: PestZone[];
   onSelectZone: (zoneKey: string) => void;
+  /** Initial map center (seller's location). Falls back to fitting all zones. */
+  center?: [number, number] | null;
 }
 
-export function PestMap({ zones, onSelectZone }: PestMapProps) {
+export function PestMap({ zones, onSelectZone, center }: PestMapProps) {
   const points = useMemo<Array<[number, number]>>(
     () => zones.map((z) => [z.latitude, z.longitude]),
     [zones]
@@ -72,8 +89,8 @@ export function PestMap({ zones, onSelectZone }: PestMapProps) {
       data-testid="pest-map"
     >
       <MapContainer
-        center={points[0] ?? fallback}
-        zoom={points.length > 0 ? 6 : 5}
+        center={center ?? points[0] ?? fallback}
+        zoom={center ? 9 : points.length > 0 ? 6 : 5}
         scrollWheelZoom
         className="h-full w-full"
         zoomControl={false}
@@ -82,7 +99,7 @@ export function PestMap({ zones, onSelectZone }: PestMapProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds points={points} />
+        <InitialView center={center} points={points} />
 
         {zones.map((zone) => (
           <CircleMarker

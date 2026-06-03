@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { PestMap } from '../components/PestMap/PestMap';
 import { usePestMap } from '../hooks/usePestMap';
+import { getUserById } from '../services/admin/users';
+import useAuthStore from '../services/Contexts/useAuthStore';
 import {
   aggregateByZone,
   distinctPlagues,
@@ -24,6 +27,24 @@ function MapaPlagasPanel() {
 
   const { data, isLoading, isError, error } = usePestMap();
   const points = useMemo(() => data ?? [], [data]);
+
+  // Resolve the seller's own location to center the map there initially.
+  const currentUser = useAuthStore((s) => s.user);
+  const userQuery = useQuery({
+    queryKey: ['user-location', currentUser?.userId],
+    queryFn: () => getUserById(currentUser!.userId),
+    enabled: !!currentUser?.userId,
+    staleTime: 10 * 60 * 1000,
+  });
+  const center = useMemo<[number, number] | null>(() => {
+    const loc = userQuery.data?.location;
+    return loc && loc.latitude != null && loc.longitude != null
+      ? [loc.latitude, loc.longitude]
+      : null;
+  }, [userQuery.data]);
+  // Wait for the location lookup to settle so the map opens already centered
+  // on the seller (avoids a flash of the whole map before recentering).
+  const locationSettled = !currentUser?.userId || userQuery.isFetched;
 
   // Filter options come from the full dataset (so they don't disappear as you filter).
   const plagueOptions = useMemo(() => distinctPlagues(points), [points]);
@@ -133,7 +154,7 @@ function MapaPlagasPanel() {
       {/* Map + detail */}
       <section className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
         <div className="h-[460px] lg:h-auto lg:min-h-[460px]">
-          {isLoading ? (
+          {isLoading || !locationSettled ? (
             <div className="flex h-full items-center justify-center rounded-2xl border border-[#E5E7EB] bg-white text-sm text-[#6A7282]">
               Cargando mapa…
             </div>
@@ -152,7 +173,7 @@ function MapaPlagasPanel() {
               No hay incidencias de plagas que coincidan con los filtros.
             </div>
           ) : (
-            <PestMap zones={zones} onSelectZone={setSelectedZoneKey} />
+            <PestMap zones={zones} center={center} onSelectZone={setSelectedZoneKey} />
           )}
         </div>
 
