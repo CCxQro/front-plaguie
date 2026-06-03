@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { PestZone, RiskLevel } from '../../types/PestMap';
@@ -16,9 +16,33 @@ const LEGEND_ITEMS: { level: RiskLevel; label: string }[] = [
   { level: 'Bajo', label: 'Bajo (1 incidencia)' },
 ];
 
-/** Marker radius grows with the number of observations (capped). */
-function radiusFor(total: number): number {
-  return Math.min(10 + total * 4, 30);
+/** Marker diameter (px) grows with the number of observations (capped). */
+function markerSize(total: number): number {
+  return Math.min(34 + total * 6, 60);
+}
+
+/** A circular zone marker showing the incidence count, sized + colored by risk. */
+function buildZoneIcon(zone: PestZone): L.DivIcon {
+  const size = markerSize(zone.totalObservaciones);
+  const color = RISK_COLORS[zone.nivelRiesgo];
+  const fontSize = size >= 48 ? 16 : 14;
+  const html = `
+    <div style="
+      width:${size}px;height:${size}px;
+      display:flex;align-items:center;justify-content:center;
+      background:${color};color:#FFFFFF;
+      border:3px solid #FFFFFF;border-radius:9999px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.35);
+      font-family:Inter,sans-serif;font-weight:700;font-size:${fontSize}px;">
+      ${zone.totalObservaciones}
+    </div>`.trim();
+  return L.divIcon({
+    html,
+    className: 'pest-zone-marker',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
 }
 
 /**
@@ -102,16 +126,10 @@ export function PestMap({ zones, onSelectZone, center }: PestMapProps) {
         <InitialView center={center} points={points} />
 
         {zones.map((zone) => (
-          <CircleMarker
+          <Marker
             key={zone.key}
-            center={[zone.latitude, zone.longitude]}
-            radius={radiusFor(zone.totalObservaciones)}
-            pathOptions={{
-              color: '#FFFFFF',
-              weight: 2,
-              fillColor: RISK_COLORS[zone.nivelRiesgo],
-              fillOpacity: 0.75,
-            }}
+            position={[zone.latitude, zone.longitude]}
+            icon={buildZoneIcon(zone)}
             eventHandlers={{ click: () => onSelectZone(zone.key) }}
           >
             <Popup>
@@ -133,7 +151,7 @@ export function PestMap({ zones, onSelectZone, center }: PestMapProps) {
                 </button>
               </div>
             </Popup>
-          </CircleMarker>
+          </Marker>
         ))}
       </MapContainer>
 
