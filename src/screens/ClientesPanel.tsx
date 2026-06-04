@@ -4,27 +4,25 @@ import { ClientFilters, emptyFilterState, type FilterState } from '../components
 import { ClientDetailDrawer } from '../components/ClientDetailDrawer/ClientDetailDrawer';
 import { useClientsMap } from '../hooks/useClientsMap';
 import { useClientDetail } from '../hooks/useClientDetail';
-import type { ClientMapFilters } from '../services/sales/salesClientsService';
 
 function ClientesPanel() {
   const [filters, setFilters] = useState<FilterState>(emptyFilterState);
   const [selectedFarmerId, setSelectedFarmerId] = useState<number | null>(null);
 
-  const serverFilters = useMemo<ClientMapFilters>(() => ({
-    cultivo: filters.cultivo || undefined,
-    estadoParcela: filters.estadoParcela || undefined,
-    state: filters.state || undefined,
-    onlyWithActiveAlerts: filters.onlyWithActiveAlerts || undefined,
-  }), [filters.cultivo, filters.estadoParcela, filters.state, filters.onlyWithActiveAlerts]);
-
-  const { data: allClients = [], isLoading, isError, error, refetch } = useClientsMap(serverFilters);
+  const { data: allClients = [], isLoading, isError, error, refetch } = useClientsMap();
   const { data: clientDetail, isLoading: detailLoading } = useClientDetail(selectedFarmerId);
 
   const filteredClients = useMemo(() => {
     const term = filters.search.trim().toLowerCase();
-    if (!term) return allClients;
-    return allClients.filter((c) => c.name.toLowerCase().includes(term));
-  }, [allClients, filters.search]);
+    return allClients.filter((c) => {
+      if (term && !c.name.toLowerCase().includes(term)) return false;
+      if (filters.cultivo && !c.cultivos.includes(filters.cultivo)) return false;
+      if (filters.estadoParcela && !c.estadosParcela.includes(filters.estadoParcela)) return false;
+      if (filters.state && c.state !== filters.state) return false;
+      if (filters.onlyWithActiveAlerts && !c.hasActiveAlerts) return false;
+      return true;
+    });
+  }, [allClients, filters.search, filters.cultivo, filters.estadoParcela, filters.state, filters.onlyWithActiveAlerts]);
 
   const criticosCount = useMemo(
     () => allClients.filter((c) => c.maxAlertSeverity === 'critico').length,

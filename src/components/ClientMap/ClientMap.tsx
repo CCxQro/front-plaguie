@@ -160,7 +160,7 @@ export function ClientMap({ clients, selectedClientId, onSelectClient }: ClientM
                 <div className="font-sans">
                   <p className="text-sm font-semibold text-[#0F172A]">{client.name}</p>
                   {client.state && (
-                    <p className="text-xs text-[#64748B]">{client.municipality ?? ''}{client.municipality && client.state ? ', ' : ''}{client.state}</p>
+                    <p className="text-xs text-[#64748B]">{client.municipality ?? ''}{client.municipality && client.state ? ', ' : ''}{client.state.toUpperCase()}</p>
                   )}
                   <p className="mt-1 text-xs text-[#64748B]">
                     {client.parcelasCount} {client.parcelasCount === 1 ? 'parcela' : 'parcelas'} · {client.totalOrders} {client.totalOrders === 1 ? 'pedido' : 'pedidos'}
