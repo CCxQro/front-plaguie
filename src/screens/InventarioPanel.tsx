@@ -5,6 +5,7 @@ import { InventoryGlyph } from '../components/Icons/InventoryGlyph';
 import { MetricCard } from '../components/MetricCard';
 import { VerProductoModal } from '../components/VerProductoModal/VerProductoModal';
 import { EditarProductoModal } from '../components/EditarProductoModal/EditarProductoModal';
+import { PendingProductsPanel } from '../components/PendingProductsPanel/PendingProductsPanel';
 import { DataTable } from '../components/DataTable/DataTable';
 import type {
   InventoryStockState,
@@ -133,6 +134,8 @@ function InventarioPanel() {
       </header>
 
       <div className="flex-1 space-y-6 p-8">
+        <PendingProductsPanel />
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((s) => (
             <MetricCard key={s.title} variant="compact" data={s} className="max-w-none" />
