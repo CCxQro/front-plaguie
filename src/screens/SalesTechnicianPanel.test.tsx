@@ -4,12 +4,17 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import SalesTechnicianPanel from './SalesTechnicianPanel';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useSalesSummary } from '../hooks/useSalesSummary';
+import { useSharedPurchases } from '../hooks/useSharedPurchases';
 
 vi.mock('../hooks/useSalesSummary', () => ({
   useSalesSummary: vi.fn(),
 }));
+vi.mock('../hooks/useSharedPurchases', () => ({
+  useSharedPurchases: vi.fn(),
+}));
 
 const mockUseSalesSummary = vi.mocked(useSalesSummary);
+const mockUseSharedPurchases = vi.mocked(useSharedPurchases);
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -23,6 +28,15 @@ function createWrapper() {
 describe('SalesTechnicianPanel', () => {
   beforeEach(() => {
     mockUseSalesSummary.mockReset();
+    mockUseSharedPurchases.mockReset();
+
+    mockUseSharedPurchases.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    } as unknown as import('@tanstack/react-query').UseQueryResult<unknown, Error>);
   });
 
   it('renders loading state for inventory', () => {
