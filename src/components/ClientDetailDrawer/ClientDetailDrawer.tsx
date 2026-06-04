@@ -58,7 +58,7 @@ function ParcelaCard({ parcela }: { parcela: ClientParcelaSummary }) {
         <p className="font-sans text-sm font-semibold text-[#0F172A]">{parcela.nombreParcela}</p>
         {parcela.estadoParcela && (
           <span className="shrink-0 rounded-full border border-[#E2E8F0] bg-white px-2 py-0.5 font-sans text-[10px] font-medium text-[#64748B]">
-            {parcela.estadoParcela}
+            {parcela.estadoParcela.toUpperCase()}
           </span>
         )}
       </div>
@@ -148,7 +148,7 @@ export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailD
           {/* Location */}
           {(client!.state || client!.municipality) && (
             <p className="mb-3 font-sans text-xs text-[#64748B]">
-              {[client!.municipality, client!.state].filter(Boolean).join(', ')}
+              {[client!.municipality, client!.state?.toUpperCase()].filter(Boolean).join(', ')}
             </p>
           )}
 
@@ -175,7 +175,7 @@ export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailD
                   </p>
                   {client!.orderSummary.lastOrderStatus && (
                     <p className="mt-0.5 font-sans text-[11px] text-[#64748B]">
-                      {client!.orderSummary.lastOrderStatus}
+                      {client!.orderSummary.lastOrderStatus.toUpperCase()}
                     </p>
                   )}
                 </div>

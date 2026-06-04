@@ -103,10 +103,10 @@ describe('ClientFilters', () => {
     );
   });
 
-  it('populates state dropdown with unique states from clients', () => {
+  it('populates state dropdown with unique states from clients (uppercase)', () => {
     setup();
-    expect(screen.getByRole('option', { name: 'Jalisco' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Michoacán' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'JALISCO' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'MICHOACÁN' })).toBeInTheDocument();
   });
 
   it('emits onChange when toggling the alerts-only checkbox', () => {
