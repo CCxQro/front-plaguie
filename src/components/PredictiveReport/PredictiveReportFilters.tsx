@@ -31,7 +31,7 @@ export function PredictiveReportFilters({
     <form
       data-testid="predictive-report-filters"
       onSubmit={handleSubmit}
-      className="bg-white rounded-xl border border-[#E5E7EB] p-5 grid gap-4 md:grid-cols-[2fr_1fr_auto] md:items-end"
+      className="bg-white rounded-xl border border-[#E5E7EB] p-5 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
     >
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-[#374151]" htmlFor="predictive-report-region">
