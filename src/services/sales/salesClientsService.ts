@@ -82,6 +82,28 @@ export interface ClientDetail {
   orderSummary: ClientOrderSummary | null;
 }
 
+// ── Status ────────────────────────────────────────────────────────────────────
+
+export interface ClientParcelaStatusAlerta {
+  alertaId: number;
+  titulo: string;
+  tipoPlaga: string | null;
+  severidad: 'critico' | 'advertencia' | 'informacion';
+  fecha: string;
+}
+
+export interface ClientParcelaStatusItem {
+  parcelaId: number;
+  nombreParcela: string;
+  saludCultivo: number;
+  alertas: ClientParcelaStatusAlerta[];
+}
+
+export interface ClientParcelaStatus {
+  farmerId: number;
+  parcelas: ClientParcelaStatusItem[];
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const salesClientsService = {
@@ -102,6 +124,11 @@ export const salesClientsService = {
 
   async getClientDetail(farmerId: number): Promise<ClientDetail> {
     const { data } = await backendClient.get<ClientDetail>(`/api/sales/clients/${farmerId}`);
+    return data;
+  },
+
+  async getClientParcelaStatus(farmerId: number): Promise<ClientParcelaStatus> {
+    const { data } = await backendClient.get<ClientParcelaStatus>(`/api/sales/clients/${farmerId}/status`);
     return data;
   },
 };
