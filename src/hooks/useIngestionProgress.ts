@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import useAuthStore from '../services/Contexts/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
-import { IngestionProgressEvent } from '../services/ingestion/ingestionService';
+import type { IngestionProgressEvent } from '../services/ingestion/ingestionService';
 
 export const useIngestionProgress = (
   onSuccess?: (msg: string) => void,

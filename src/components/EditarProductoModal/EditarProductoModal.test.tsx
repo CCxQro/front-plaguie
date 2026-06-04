@@ -50,13 +50,13 @@ describe('EditarProductoModal', () => {
         description: 'Test description',
         statusId: 1,
         firebaseImageId: '123',
-        latestPrice: 100,
+        latestPrice: '150',
         stock: 50,
         unitName: 'Kg',
       },
       isLoading: false,
       error: null,
-    });
+    } as unknown as import('@tanstack/react-query').UseQueryResult<import('../../types/Product').Product, Error>);
 
     render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />, { wrapper: createWrapper() });
     

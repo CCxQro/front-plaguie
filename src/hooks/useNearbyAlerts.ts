@@ -7,10 +7,11 @@ import type { EarlyAlert } from '../types/EarlyAlert';
  * Validated early alerts within `radioKm` of the authenticated seller's location.
  * Re-fetches when the radius changes.
  */
-export function useNearbyAlerts(radioKm: number) {
+export function useNearbyAlerts(radioKm: number, options?: { enabled?: boolean }) {
   return useQuery<EarlyAlert[], Error>({
     queryKey: ['nearby-alerts', radioKm],
     queryFn: () => getNearbyAlerts(radioKm),
     staleTime: 60 * 1000,
+    enabled: options?.enabled,
   });
 }
