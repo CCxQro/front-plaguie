@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type {
   ClientDetail,
   ClientParcelaSummary,
   ClientAlertaSummary,
 } from '../../services/sales/salesClientsService';
+import { ClienteParcelaModal } from '../ClienteParcelaModal';
 
 export interface ClientDetailDrawerProps {
   client: ClientDetail | null;
@@ -95,6 +96,8 @@ function DataRow({ label, value }: { label: string; value: string }) {
 }
 
 export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailDrawerProps) {
+  const [showStatusModal, setShowStatusModal] = useState(false);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -215,9 +218,21 @@ export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailD
 
           {/* Parcelas */}
           <section>
-            <h3 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wide text-[#475569]">
-              Parcelas ({client!.parcelas.length})
-            </h3>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-sans text-xs font-semibold uppercase tracking-wide text-[#475569]">
+                Parcelas ({client!.parcelas.length})
+              </h3>
+              {client!.parcelas.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowStatusModal(true)}
+                  className="rounded-lg border border-[#E2E8F0] bg-white px-2 py-1 text-[10px] font-medium text-[#2B7FFF] hover:bg-[#F8FAFC]"
+                  data-testid="btn-ver-estado-parcelas"
+                >
+                  Ver Estado
+                </button>
+              )}
+            </div>
             {client!.parcelas.length === 0 ? (
               <p className="font-sans text-sm italic text-[#94A3B8]">Sin parcelas registradas.</p>
             ) : (
@@ -231,6 +246,13 @@ export function ClientDetailDrawer({ client, isLoading, onClose }: ClientDetailD
             )}
           </section>
         </div>
+      )}
+
+      {showStatusModal && client && (
+        <ClienteParcelaModal 
+          farmerId={client.farmerId} 
+          onClose={() => setShowStatusModal(false)} 
+        />
       )}
     </aside>
   );

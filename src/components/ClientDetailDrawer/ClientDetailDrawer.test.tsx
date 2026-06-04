@@ -2,6 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ClientDetailDrawer } from './ClientDetailDrawer';
 import type { ClientDetail } from '../../services/sales/salesClientsService';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
 
 const sampleClient: ClientDetail = {
   farmerId: 7,
@@ -64,29 +74,30 @@ describe('ClientDetailDrawer', () => {
   it('renders nothing when client is null and not loading', () => {
     const { container } = render(
       <ClientDetailDrawer client={null} onClose={() => {}} />,
+      { wrapper: createWrapper() }
     );
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the drawer when a client is provided', () => {
-    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
     expect(screen.getByTestId('client-detail-drawer')).toBeInTheDocument();
     expect(screen.getByText('Rancho Las Flores')).toBeInTheDocument();
   });
 
   it('shows order summary metrics', () => {
-    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('lists all parcelas', () => {
-    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
     const cards = screen.getAllByTestId('client-detail-parcela');
     expect(cards).toHaveLength(2);
   });
 
   it('lists all alertas', () => {
-    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
     const items = screen.getAllByTestId('client-detail-alerta');
     expect(items).toHaveLength(1);
     expect(screen.getByText('Plaga detectada en zona norte')).toBeInTheDocument();
@@ -94,31 +105,38 @@ describe('ClientDetailDrawer', () => {
 
   it('calls onClose when clicking the close button', () => {
     const onClose = vi.fn();
-    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />, { wrapper: createWrapper() });
     fireEvent.click(screen.getByTestId('client-detail-close'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when pressing Escape', () => {
     const onClose = vi.fn();
-    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={onClose} />, { wrapper: createWrapper() });
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows empty parcelas message when there are none', () => {
     const noData: ClientDetail = { ...sampleClient, parcelas: [], alertas: [] };
-    render(<ClientDetailDrawer client={noData} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={noData} onClose={() => {}} />, { wrapper: createWrapper() });
     expect(screen.getByText(/sin parcelas registradas/i)).toBeInTheDocument();
   });
 
   it('shows loading spinner when isLoading is true and client is null', () => {
-    render(<ClientDetailDrawer client={null} isLoading onClose={() => {}} />);
+    render(<ClientDetailDrawer client={null} isLoading onClose={() => {}} />, { wrapper: createWrapper() });
     expect(screen.getByTestId('client-detail-drawer')).toBeInTheDocument();
   });
 
   it('displays severity badge for alertas', () => {
-    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />);
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
     expect(screen.getByText('Crítico')).toBeInTheDocument();
+  });
+
+  it('opens ClienteParcelaModal when clicking Ver Estado button', () => {
+    render(<ClientDetailDrawer client={sampleClient} onClose={() => {}} />, { wrapper: createWrapper() });
+    const button = screen.getByTestId('btn-ver-estado-parcelas');
+    fireEvent.click(button);
+    expect(screen.getByTestId('cliente-parcela-modal')).toBeInTheDocument();
   });
 });
