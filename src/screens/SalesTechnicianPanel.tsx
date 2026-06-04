@@ -16,81 +16,7 @@ import { WeatherModal } from '../components/WeatherModal';
 import { PlagueAlertsModal } from '../components/PlagueAlertsModal';
 import useAuthStore from '../services/Contexts/useAuthStore';
 
-type MetricCardData = {
-  title: string;
-  value: string;
-  trend: string;
-  icon: ReactNode;
-};
-
-type InventoryRow = {
-  id: string;
-  product: string;
-  sku: string;
-  category: string;
-  categoryColor: string;
-  stock: string;
-  lastSale: string;
-  status: string;
-  statusClassName: string;
-};
-
-const METRICS: MetricCardData[] = [
-  {
-    title: 'Clientes Totales',
-    value: '1,284',
-    trend: '+5.2%',
-    icon: <MetricPeopleIcon />,
-  },
-  {
-    title: 'Nuevos Clientes (Mes)',
-    value: '42',
-    trend: '+12%',
-    icon: <MetricAddUserIcon />,
-  },
-  {
-    title: 'Ventas del Mes',
-    value: '$12,500.00',
-    trend: '+8.4%',
-    icon: <MetricMoneyIcon />,
-  },
-];
-
-const INVENTORY_ROWS: InventoryRow[] = [
-  {
-    id: 'fungicida-x2-premium',
-    product: 'Fungicida X2 Premium',
-    sku: 'F-1024',
-    category: 'Plaguicidas',
-    categoryColor: '#CA3500',
-    stock: '5 unidades',
-    lastSale: 'Hace 2 horas',
-    status: 'Crítico',
-    statusClassName: 'bg-[#FEE2E2] text-[#DC2626]',
-  },
-  {
-    id: 'insecticida-organico-v-bio',
-    product: 'Insecticida Orgánico V-Bio',
-    sku: 'I-2211',
-    category: 'Orgánicos',
-    categoryColor: '#1447E6',
-    stock: '12 unidades',
-    lastSale: 'Hace 1 día',
-    status: 'Bajo',
-    statusClassName: 'bg-[#FFEDD5] text-[#EA580C]',
-  },
-  {
-    id: 'herbicida-pro-extreme',
-    product: 'Herbicida Pro Extreme',
-    sku: 'H-3308',
-    category: 'Herbicidas',
-    categoryColor: '#CA3500',
-    stock: '8 unidades',
-    lastSale: 'Ayer',
-    status: 'Bajo',
-    statusClassName: 'bg-[#FFEDD5] text-[#EA580C]',
-  },
-];
+import { useSalesSummary } from '../hooks/useSalesSummary';
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
@@ -101,6 +27,9 @@ function SalesTechnicianPanel() {
   const userName = user?.name ?? 'Técnico';
   const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
   const [isPlagueAlertsModalOpen, setIsPlagueAlertsModalOpen] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const { data, isLoading } = useSalesSummary(startDate || undefined, endDate || undefined);
 
   return (
     <div className="min-h-full bg-[#F6F7F7] text-[#0F172A]">
@@ -132,23 +61,73 @@ function SalesTechnicianPanel() {
 
       <main className="px-8 pb-8 pt-8">
         <section className="mb-6 rounded-2xl border border-[#E2E8F0] bg-white px-6 py-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-          <p className="text-sm text-[#64748B]">Bienvenido, <span className="font-medium text-[#0F172A]">{userName}</span></p>
-          <h2 className="mt-1 text-[28px] font-semibold leading-9 text-[#0F172A]">Panel de Técnico de Ventas</h2>
-          <p className="mt-2 max-w-2xl text-[14px] leading-5.25 text-[#475569]">
-            Aquí puedes revisar clientes, inventario, alertas y reportes desde el dashboard principal.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-[#64748B]">Bienvenido, <span className="font-medium text-[#0F172A]">{userName}</span></p>
+              <h2 className="mt-1 text-[28px] font-semibold leading-9 text-[#0F172A]">Panel de Técnico de Ventas</h2>
+              <p className="mt-2 max-w-2xl text-[14px] leading-5.25 text-[#475569]">
+                Aquí puedes revisar clientes, inventario, alertas y reportes desde el dashboard principal.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0]">
+              <div className="flex flex-col">
+                <label className="text-xs text-[#64748B] ml-1 mb-1">Desde</label>
+                <input 
+                  type="date" 
+                  className="bg-white border border-[#E2E8F0] rounded-md px-2 py-1.5 text-sm"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-xs text-[#64748B] ml-1 mb-1">Hasta</label>
+                <input 
+                  type="date" 
+                  className="bg-white border border-[#E2E8F0] rounded-md px-2 py-1.5 text-sm"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-4">
-          {METRICS.map((metric) => (
-            <MetricCard key={metric.title} data={metric} variant="default" className="h-40.5 max-w-none" />
-          ))}
-
+          <MetricCard
+            data={{
+              title: 'Ventas Totales',
+              value: data ? `$${data.metrics.totalEarnings.toLocaleString()}` : '$0',
+              trend: data?.metrics.earningsTrend || '0%',
+              icon: <MetricMoneyIcon />,
+            }}
+            variant="default"
+            className="h-40.5 max-w-none"
+          />
+          <MetricCard
+            data={{
+              title: 'Nuevos Clientes',
+              value: data ? data.metrics.newClients.toLocaleString() : '0',
+              trend: data?.metrics.clientsTrend || '0%',
+              icon: <MetricAddUserIcon />,
+            }}
+            variant="default"
+            className="h-40.5 max-w-none"
+          />
+          <MetricCard
+            data={{
+              title: 'Pedidos',
+              value: data ? data.metrics.totalOrders.toLocaleString() : '0',
+              trend: data?.metrics.ordersTrend || '0%',
+              icon: <MetricPeopleIcon />,
+            }}
+            variant="default"
+            className="h-40.5 max-w-none"
+          />
           <WarningMetricCard />
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <SalesChartCard />
+          <SalesChartCard salesData={data?.salesChartData?.map(d => ({ date: d.date, sales: d.amount, revenue: d.amount })) || []} />
 
           <MapCard
             data={{
@@ -193,7 +172,12 @@ function SalesTechnicianPanel() {
               </thead>
 
               <tbody>
-                {INVENTORY_ROWS.map((row) => (
+                {isLoading && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">Cargando inventario...</td>
+                  </tr>
+                )}
+                {data?.inventoryAlerts.map((row) => (
                   <tr key={row.id} className="border-b border-[#F1F5F9] last:border-b-0">
                     <td className="px-6 py-5 align-middle">
                       <div className="flex items-center gap-3">
@@ -208,18 +192,18 @@ function SalesTechnicianPanel() {
                     </td>
 
                     <td className="px-6 py-5 align-middle">
-                      <CategoryBadge label={row.category} color={row.categoryColor} width="w-auto" height="h-6" />
+                      <CategoryBadge label={row.category} color={row.category === 'Plaguicidas' ? '#CA3500' : '#1447E6'} width="w-auto" height="h-6" />
                     </td>
 
-                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#DC2626]">{row.stock}</td>
+                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#DC2626]">{row.stock} unidades</td>
 
-                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#64748B]">{row.lastSale}</td>
+                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#64748B]">{new Date(row.lastSaleDate).toLocaleDateString()}</td>
 
                     <td className="px-6 py-5 align-middle">
                       <span
                         className={cx(
                           'inline-flex items-center rounded-full px-3 py-1 text-[10px] uppercase leading-3.75',
-                          row.statusClassName,
+                          row.status === 'Crítico' ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#FFEDD5] text-[#EA580C]'
                         )}
                       >
                         {row.status}
