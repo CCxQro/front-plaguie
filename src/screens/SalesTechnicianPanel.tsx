@@ -127,7 +127,7 @@ function SalesTechnicianPanel() {
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <SalesChartCard salesData={data?.salesChartData?.map(d => ({ date: d.date, sales: d.amount, revenue: d.amount })) || []} />
+          <SalesChartCard salesData={data?.salesChartData?.map(d => ({ label: new Date(d.date).toLocaleDateString('es-MX', { weekday: 'short' }), height: Math.max(10, Math.min(220, (d.amount / 1000) * 10)), tone: '#75C79E' })) || undefined} />
 
           <MapCard
             data={{

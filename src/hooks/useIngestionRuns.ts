@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getIngestionRuns, IngestionRunResponseDto } from '../services/ingestion/ingestionService';
+import { getIngestionRuns } from '../services/ingestion/ingestionService';
+import type { IngestionRunResponseDto } from '../services/ingestion/ingestionService';
 
 export const useIngestionRuns = () => {
   return useQuery<IngestionRunResponseDto[]>({

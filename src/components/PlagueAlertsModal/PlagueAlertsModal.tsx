@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { CloseIcon } from '../Icons/CloseIcon';
 import { RefreshIcon } from '../Icons/RefreshIcon';
 import { PlagueAlertCard } from '../PlagueAlertCard/PlagueAlertCard';
-import type { PlagueAlertCardProps } from '../PlagueAlertCard/PlagueAlertCard';
-import { plagueAlertsService } from '../../services/plagueAlerts/plagueAlertsService';
+import type { PlagueAlertCardProps, PlagueAlertVariant } from '../PlagueAlertCard/PlagueAlertCard';
+import { useNearbyAlerts } from '../../hooks/useNearbyAlerts';
+import type { EarlyAlert } from '../../types/EarlyAlert';
 
 export interface PlagueAlertsModalProps {
   isOpen: boolean;
@@ -11,32 +12,25 @@ export interface PlagueAlertsModalProps {
   onVerMapaCompleto?: () => void;
 }
 
-export function PlagueAlertsModal({ isOpen, onClose, onVerMapaCompleto }: PlagueAlertsModalProps) {
-  const [alerts, setAlerts] = useState<PlagueAlertCardProps[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  const loadAlerts = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await plagueAlertsService.getAlerts();
-      setAlerts(data.alerts);
-    } catch (err) {
-      setError('Error al cargar alertas de plagas');
-      console.error('Plague alerts load error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+const mapAlertToCardProps = (alert: EarlyAlert): PlagueAlertCardProps => {
+  const date = alert.createdAt ? new Date(alert.createdAt) : new Date();
+  
+  return {
+    variant: (alert.severidad as PlagueAlertVariant) || 'informacion',
+    titulo: alert.titulo || 'Alerta de Plaga',
+    ubicacion: `${alert.stateName || 'Ubicación desconocida'} (a ${alert.distanceKm?.toFixed(1) ?? '?'} km)`,
+    tiempo: date.toLocaleDateString('es-MX'),
+    tipoPlaga: alert.tipoPlaga || 'Desconocida',
+    hectareas: alert.hectareas ? `${alert.hectareas} hectáreas` : 'Área no especificada',
   };
+};
 
-  useEffect(() => {
-    if (isOpen && alerts.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void loadAlerts();
-    }
-  }, [isOpen, alerts.length]);
+export function PlagueAlertsModal({ isOpen, onClose, onVerMapaCompleto }: PlagueAlertsModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  
+  // Usar radio de 100km por defecto, desactivar fetch si modal cerrado
+  const { data: alertsData, isLoading, error } = useNearbyAlerts(100, { enabled: isOpen });
+  const alerts = alertsData || [];
 
   useEffect(() => {
     const handleBackdropClick = (e: MouseEvent) => {
@@ -100,11 +94,11 @@ export function PlagueAlertsModal({ isOpen, onClose, onVerMapaCompleto }: Plague
               <span className="ml-2 text-sm text-[#62748E]">Cargando alertas...</span>
             </div>
           ) : error ? (
-            <div className="rounded-lg bg-red-50 p-4 text-center text-sm text-red-600">{error}</div>
+            <div className="rounded-lg bg-red-50 p-4 text-center text-sm text-red-600">{error.message}</div>
           ) : (
             <div className="flex flex-col gap-3 pb-2">
               {alerts.map((alert, index) => (
-                <PlagueAlertCard key={index} {...alert} />
+                <PlagueAlertCard key={alert.alertaId || index} {...mapAlertToCardProps(alert)} />
               ))}
             </div>
           )}
