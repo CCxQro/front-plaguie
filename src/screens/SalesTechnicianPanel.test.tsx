@@ -26,7 +26,7 @@ describe('SalesTechnicianPanel', () => {
   });
 
   it('renders loading state for inventory', () => {
-    mockUseSalesSummary.mockReturnValue({ data: undefined, isLoading: true } as any);
+    mockUseSalesSummary.mockReturnValue({ data: undefined, isLoading: true } as unknown as ReturnType<typeof useSalesSummary>);
     render(<SalesTechnicianPanel />, { wrapper: createWrapper() });
     expect(screen.getByText(/Cargando inventario.../i)).toBeInTheDocument();
   });
@@ -58,7 +58,7 @@ describe('SalesTechnicianPanel', () => {
       ],
       salesChartData: []
       }
-    } as any);
+    } as unknown as ReturnType<typeof useSalesSummary>);
 
     render(<SalesTechnicianPanel />, { wrapper: createWrapper() });
 
