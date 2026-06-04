@@ -16,6 +16,8 @@ import { WeatherModal } from '../components/WeatherModal';
 import { PlagueAlertsModal } from '../components/PlagueAlertsModal';
 import useAuthStore from '../services/Contexts/useAuthStore';
 
+import { SharedPurchasesModal } from '../components/SharedPurchasesModal';
+import { useSharedPurchases } from '../hooks/useSharedPurchases';
 import { useSalesSummary } from '../hooks/useSalesSummary';
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -30,6 +32,9 @@ function SalesTechnicianPanel() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const { data, isLoading } = useSalesSummary(startDate || undefined, endDate || undefined);
+  const [isSharedPurchasesModalOpen, setIsSharedPurchasesModalOpen] = useState(false);
+  const { data: sharedPurchases = [] } = useSharedPurchases();
+  const unreadSharedPurchases = sharedPurchases.length;
 
   return (
     <div className="min-h-full bg-[#F6F7F7] text-[#0F172A]">
@@ -52,9 +57,12 @@ function SalesTechnicianPanel() {
             type="button"
             className="relative grid h-9 w-9 place-content-center rounded-lg text-[#64748B] transition hover:bg-white"
             aria-label="Notificaciones"
+            onClick={() => setIsSharedPurchasesModalOpen(true)}
           >
             <BellIcon />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-[#EF4444]" />
+            {unreadSharedPurchases > 0 && (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-[#EF4444]" />
+            )}
           </button>
         </div>
       </header>
@@ -226,6 +234,7 @@ function SalesTechnicianPanel() {
       </main>
 
       <PlagueAlertsModal isOpen={isPlagueAlertsModalOpen} onClose={() => setIsPlagueAlertsModalOpen(false)} />
+      <SharedPurchasesModal isOpen={isSharedPurchasesModalOpen} onClose={() => setIsSharedPurchasesModalOpen(false)} />
     </div>
   );
 }
