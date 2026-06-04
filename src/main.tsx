@@ -20,6 +20,7 @@ import ClientesPanel from './screens/ClientesPanel'
 import ProductosPanel from './screens/ProductosPanel'
 import ReportesPanel from './screens/ReportesPanel'
 import AlertasCercanasPanel from './screens/AlertasCercanasPanel'
+import MapaPlagasPanel from './screens/MapaPlagasPanel'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import { DefaultRedirect } from './components/DefaultRedirect/DefaultRedirect'
 
@@ -75,6 +76,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="productos" element={<ProductosPanel />} />
             <Route path="reportes" element={<ReportesPanel />} />
             <Route path="alertas" element={<AlertasCercanasPanel />} />
+            <Route path="mapa" element={<MapaPlagasPanel />} />
           </Route>
 
           {/* Unknown routes → default page or login */}
