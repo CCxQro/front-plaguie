@@ -24,6 +24,18 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
+function formatWeekday(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-MX', { weekday: 'short' });
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+}
+
 function SalesTechnicianPanel() {
   const { user } = useAuthStore();
   const userName = user?.name ?? 'Técnico';
@@ -35,6 +47,20 @@ function SalesTechnicianPanel() {
   const [isSharedPurchasesModalOpen, setIsSharedPurchasesModalOpen] = useState(false);
   const { data: sharedPurchases = [] } = useSharedPurchases();
   const unreadSharedPurchases = sharedPurchases.length;
+
+  // El backend puede devolver el resumen parcial o con campos nulos (el
+  // contrato del front es más rico que el del back). Normalizamos con valores
+  // seguros para que el render nunca reciba null/undefined y crashee (pantalla
+  // blanca). `?.` sobre `data` solo protege `data`, no sus campos anidados.
+  const metrics = data?.metrics;
+  const totalEarnings = metrics?.totalEarnings ?? 0;
+  const newClients = metrics?.newClients ?? 0;
+  const totalOrders = metrics?.totalOrders ?? 0;
+  const earningsTrend = metrics?.earningsTrend ?? '0%';
+  const clientsTrend = metrics?.clientsTrend ?? '0%';
+  const ordersTrend = metrics?.ordersTrend ?? '0%';
+  const inventoryAlerts = data?.inventoryAlerts ?? [];
+  const salesChartData = data?.salesChartData ?? [];
 
   return (
     <div className="min-h-full bg-[#F6F7F7] text-[#0F172A]">
@@ -104,8 +130,8 @@ function SalesTechnicianPanel() {
           <MetricCard
             data={{
               title: 'Ventas Totales',
-              value: data ? `$${data.metrics.totalEarnings.toLocaleString()}` : '$0',
-              trend: data?.metrics.earningsTrend || '0%',
+              value: `$${totalEarnings.toLocaleString()}`,
+              trend: earningsTrend,
               icon: <MetricMoneyIcon />,
             }}
             variant="default"
@@ -114,8 +140,8 @@ function SalesTechnicianPanel() {
           <MetricCard
             data={{
               title: 'Nuevos Clientes',
-              value: data ? data.metrics.newClients.toLocaleString() : '0',
-              trend: data?.metrics.clientsTrend || '0%',
+              value: newClients.toLocaleString(),
+              trend: clientsTrend,
               icon: <MetricAddUserIcon />,
             }}
             variant="default"
@@ -124,8 +150,8 @@ function SalesTechnicianPanel() {
           <MetricCard
             data={{
               title: 'Pedidos',
-              value: data ? data.metrics.totalOrders.toLocaleString() : '0',
-              trend: data?.metrics.ordersTrend || '0%',
+              value: totalOrders.toLocaleString(),
+              trend: ordersTrend,
               icon: <MetricPeopleIcon />,
             }}
             variant="default"
@@ -135,7 +161,7 @@ function SalesTechnicianPanel() {
         </section>
 
         <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <SalesChartCard salesData={data?.salesChartData?.map(d => ({ label: new Date(d.date).toLocaleDateString('es-MX', { weekday: 'short' }), height: Math.max(10, Math.min(220, (d.amount / 1000) * 10)), tone: '#75C79E' })) || undefined} />
+          <SalesChartCard salesData={salesChartData.length ? salesChartData.map(d => ({ label: formatWeekday(d?.date), height: Math.max(10, Math.min(220, ((d?.amount ?? 0) / 1000) * 10)), tone: '#75C79E' })) : undefined} />
 
           <MapCard
             data={{
@@ -185,7 +211,7 @@ function SalesTechnicianPanel() {
                     <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">Cargando inventario...</td>
                   </tr>
                 )}
-                {data?.inventoryAlerts.map((row) => (
+                {inventoryAlerts.map((row) => (
                   <tr key={row.id} className="border-b border-[#F1F5F9] last:border-b-0">
                     <td className="px-6 py-5 align-middle">
                       <div className="flex items-center gap-3">
@@ -205,7 +231,7 @@ function SalesTechnicianPanel() {
 
                     <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#DC2626]">{row.stock} unidades</td>
 
-                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#64748B]">{new Date(row.lastSaleDate).toLocaleDateString()}</td>
+                    <td className="px-6 py-5 align-middle text-[14px] leading-5.25 text-[#64748B]">{formatDate(row.lastSaleDate)}</td>
 
                     <td className="px-6 py-5 align-middle">
                       <span
@@ -219,6 +245,13 @@ function SalesTechnicianPanel() {
                     </td>
                   </tr>
                 ))}
+                {!isLoading && inventoryAlerts.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                      No hay alertas de inventario para mostrar.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

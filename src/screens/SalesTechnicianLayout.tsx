@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarClaro } from '../components/Sidebar/SidebarClaro';
+import ErrorBoundary from '../components/ErrorBoundary/ErrorBoundary';
 import useAuthStore from '../services/Contexts/useAuthStore';
 
 export default function SalesTechnicianLayout() {
@@ -32,7 +33,9 @@ export default function SalesTechnicianLayout() {
       />
 
       <div className="flex-1 overflow-y-auto bg-[#F9FAFB]">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </div>
     </div>
   );
