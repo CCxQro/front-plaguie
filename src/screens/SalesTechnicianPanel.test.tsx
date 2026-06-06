@@ -36,7 +36,7 @@ describe('SalesTechnicianPanel', () => {
       isError: false,
       error: null,
       refetch: vi.fn(),
-    } as unknown as import('@tanstack/react-query').UseQueryResult<unknown, Error>);
+    } as unknown as ReturnType<typeof useSharedPurchases>);
   });
 
   it('renders loading state for inventory', () => {
@@ -82,5 +82,20 @@ describe('SalesTechnicianPanel', () => {
       expect(screen.getByText(/^12$/)).toBeInTheDocument();
       expect(screen.getByText(/Fungicida Test/)).toBeInTheDocument();
     });
+  });
+
+  it('does not crash when the backend returns partial/null fields (regression: white screen)', () => {
+    mockUseSalesSummary.mockReturnValue({
+      isLoading: false,
+      // El backend puede devolver el objeto pero con campos anidados nulos.
+      data: { metrics: null, inventoryAlerts: null, salesChartData: null },
+    } as unknown as ReturnType<typeof useSalesSummary>);
+
+    render(<SalesTechnicianPanel />, { wrapper: createWrapper() });
+
+    // No revienta: la card de Ventas Totales cae a su valor seguro y la tabla
+    // muestra su estado vacío en lugar de dejar la pantalla en blanco.
+    expect(screen.getByText('$0')).toBeInTheDocument();
+    expect(screen.getByText(/No hay alertas de inventario/i)).toBeInTheDocument();
   });
 });
