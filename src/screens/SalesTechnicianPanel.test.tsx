@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import SalesTechnicianPanel from './SalesTechnicianPanel';
@@ -97,5 +97,47 @@ describe('SalesTechnicianPanel', () => {
     // muestra su estado vacío en lugar de dejar la pantalla en blanco.
     expect(screen.getByText('$0')).toBeInTheDocument();
     expect(screen.getByText(/No hay alertas de inventario/i)).toBeInTheDocument();
+  });
+
+  it('renders the chart from salesChartData and handles date range + modals', () => {
+    mockUseSalesSummary.mockReturnValue({
+      isLoading: false,
+      data: {
+        metrics: {
+          totalEarnings: 1000,
+          remainingInventory: 10,
+          totalOrders: 5,
+          newClients: 2,
+          earningsTrend: '+1%',
+          inventoryTrend: '0%',
+          ordersTrend: '+1%',
+          clientsTrend: '0%',
+        },
+        inventoryAlerts: [],
+        // valid date, null date and invalid date exercise formatWeekday branches
+        salesChartData: [
+          { date: '2026-06-01T00:00:00Z', amount: 5000 },
+          { date: null, amount: 0 },
+          { date: 'not-a-date', amount: 100 },
+        ],
+      },
+    } as unknown as ReturnType<typeof useSalesSummary>);
+
+    const { container } = render(<SalesTechnicianPanel />, { wrapper: createWrapper() });
+
+    // date range inputs
+    const dateInputs = container.querySelectorAll('input[type="date"]');
+    fireEvent.change(dateInputs[0], { target: { value: '2026-06-01' } });
+    fireEvent.change(dateInputs[1], { target: { value: '2026-06-30' } });
+
+    // notifications bell opens the shared purchases modal
+    fireEvent.click(screen.getByRole('button', { name: 'Notificaciones' }));
+
+    // open plague alerts + weather modals from the map cards
+    fireEvent.click(screen.getByText('Ver mapa completo'));
+    expect(screen.getByTestId('plague-alerts-modal')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Ver reporte completo'));
+    expect(screen.getByTestId('weather-modal')).toBeInTheDocument();
   });
 });

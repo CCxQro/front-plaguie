@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import AdminOverviewPanel from './AdminOverviewPanel';
@@ -65,5 +65,25 @@ describe('AdminOverviewPanel', () => {
       expect(screen.getByText(/Error al cargar métricas/i)).toBeInTheDocument();
       expect(screen.getByText(/Network Error/i)).toBeInTheDocument();
     });
+  });
+
+  it('refetches metrics when the retry button is clicked', async () => {
+    mockGetAdminMetrics.mockRejectedValueOnce(new Error('Network Error'));
+    render(<AdminOverviewPanel />, { wrapper: createWrapper() });
+    await screen.findByText(/Error al cargar métricas/i);
+
+    mockGetAdminMetrics.mockResolvedValueOnce({
+      totalUsers: 1,
+      newUsersThisWeek: 0,
+      totalProducts: 0,
+      pendingValidations: 0,
+      totalSurveillanceRecords: 0,
+      recordsThisMonth: 0,
+      totalOrders: 0,
+      ordersThisWeek: 0,
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Reintentar/i }));
+
+    await waitFor(() => expect(mockGetAdminMetrics).toHaveBeenCalledTimes(2));
   });
 });
