@@ -1,5 +1,6 @@
 import axios from 'axios';
 import useAuthStore from '../Contexts/useAuthStore';
+import { resolveErrorMessage } from './errorMessages';
 
 export const backendClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080',
@@ -15,7 +16,8 @@ backendClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Normalise backend error messages so callers always receive a plain Error.
+// Normalise backend error messages so callers always receive a plain Error
+// carrying a Spanish, user-facing message (see ./errorMessages).
 // A 403 mid-session means the account was deactivated — clear the session and go to /login.
 backendClient.interceptors.response.use(
   (response) => response,
@@ -30,11 +32,11 @@ backendClient.interceptors.response.use(
       return new Promise(() => {});
     }
 
-    const message: string =
-      error.response?.data?.error ??
-      error.response?.data?.message ??
-      error.message ??
-      'Request failed';
+    const message = resolveErrorMessage(
+      error.response?.data?.error ?? error.response?.data?.message,
+      error.response?.status,
+      error.message,
+    );
     return Promise.reject(new Error(message));
   },
 );

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getUserById } from '../../services/admin/users';
 import useAuthStore from '../../services/Contexts/useAuthStore';
 import type { UpdateUserPayload } from '../../types/DataUser';
+import { LocationPicker, type LocationPickerValue } from '../../components/LocationPicker/LocationPicker';
 
 interface LocationForm {
   stateName: string;
@@ -62,6 +63,23 @@ function EditUserForm({ user, isSelf, formError, isPending, onSave, onClose }: F
   function patchLocation(patch: Partial<LocationForm>) {
     setLocation((prev) => ({ ...prev, ...patch }));
   }
+
+  const pickerValue: LocationPickerValue = {
+    latitude: location.latitude ? Number(location.latitude) : null,
+    longitude: location.longitude ? Number(location.longitude) : null,
+    stateName: location.stateName,
+    municipalityName: location.municipalityName,
+    localityName: location.localityName,
+  };
+
+  const handlePickerChange = (next: LocationPickerValue) =>
+    patchLocation({
+      latitude: next.latitude != null ? String(next.latitude) : '',
+      longitude: next.longitude != null ? String(next.longitude) : '',
+      stateName: next.stateName,
+      municipalityName: next.municipalityName,
+      localityName: next.localityName,
+    });
 
   function handleSave() {
     setValidationError(null);
@@ -148,37 +166,10 @@ function EditUserForm({ user, isSelf, formError, isPending, onSave, onClose }: F
             </p>
             {!user.location ? (
               <p className="text-xs text-[#6A7282]">
-                Este usuario aún no tiene una ubicación registrada. Captúrala para guardar el
-                cambio de rol.
+                Este usuario aún no tiene una ubicación registrada. Selecciónala en el mapa para
+                guardar el cambio de rol.
               </p>
             ) : null}
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#364153]">Estado</span>
-              <input
-                value={location.stateName}
-                onChange={(e) => patchLocation({ stateName: e.target.value })}
-                className={inputClass}
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#364153]">Municipio</span>
-              <input
-                value={location.municipalityName}
-                onChange={(e) => patchLocation({ municipalityName: e.target.value })}
-                className={inputClass}
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-[#364153]">Localidad</span>
-              <input
-                value={location.localityName}
-                onChange={(e) => patchLocation({ localityName: e.target.value })}
-                className={inputClass}
-              />
-            </label>
 
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-[#364153]">Propiedad</span>
@@ -189,26 +180,7 @@ function EditUserForm({ user, isSelf, formError, isPending, onSave, onClose }: F
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#364153]">Latitud</span>
-                <input
-                  type="number"
-                  value={location.latitude}
-                  onChange={(e) => patchLocation({ latitude: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#364153]">Longitud</span>
-                <input
-                  type="number"
-                  value={location.longitude}
-                  onChange={(e) => patchLocation({ longitude: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-            </div>
+            <LocationPicker value={pickerValue} onChange={handlePickerChange} />
           </div>
         ) : null}
       </div>

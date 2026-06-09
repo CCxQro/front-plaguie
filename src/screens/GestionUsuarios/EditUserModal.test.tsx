@@ -3,6 +3,36 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 vi.mock('../../services/admin/users', () => ({ getUserById: vi.fn() }));
 
+// Stub the Leaflet picker; expose a button that clears the location via onChange.
+vi.mock('../../components/LocationPicker/LocationPicker', () => ({
+  LocationPicker: ({
+    onChange,
+    readOnly,
+  }: {
+    onChange?: (v: unknown) => void;
+    readOnly?: boolean;
+  }) =>
+    readOnly ? (
+      <div data-testid="location-picker-readonly" />
+    ) : (
+      <button
+        type="button"
+        data-testid="mock-clear-location"
+        onClick={() =>
+          onChange?.({
+            latitude: null,
+            longitude: null,
+            stateName: '',
+            municipalityName: '',
+            localityName: '',
+          })
+        }
+      >
+        clear
+      </button>
+    ),
+}));
+
 let currentUserId: number | undefined = 99;
 vi.mock('../../services/Contexts/useAuthStore', () => ({
   default: (selector: (s: { user: { userId: number | undefined } }) => unknown) =>
@@ -70,7 +100,7 @@ describe('EditUserModal', () => {
     getUser.mockResolvedValue(farmer as never);
     const { onSave } = setup();
     await screen.findByDisplayValue('Ana');
-    fireEvent.change(screen.getByDisplayValue('Jalisco'), { target: { value: '' } });
+    fireEvent.click(screen.getByTestId('mock-clear-location'));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
     expect(screen.getByText(/ubicación es obligatoria/i)).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
