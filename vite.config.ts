@@ -14,6 +14,23 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
+    coverage: {
+      provider: 'v8',
+      // 'text' = resumen en terminal, 'html' = dashboard navegable en coverage/index.html
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.stories.{ts,tsx}',
+        'src/test/**',
+        'src/stories/**',
+        'src/types/**',
+        'src/main.tsx',
+        'src/**/*.d.ts',
+      ],
+      thresholds: { lines: 80, functions: 80, statements: 80, branches: 80 },
+    },
     projects: [
       {
         extends: true,
