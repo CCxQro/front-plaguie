@@ -40,3 +40,12 @@ CLAUDE.md
 
 coverage/
 .github/
+
+# CodeGraph (local index — do not commit)
+.codegraph/
+.antigravitycli/
+.claude
+.codegraph
+.gemini/
+_wrapup
+handoff.md

@@ -12,6 +12,7 @@ import GestionUsuariosPanel from './screens/GestionUsuariosPanel'
 import InventarioPanel from './screens/InventarioPanel'
 import ValidacionPanel from './screens/ValidacionPanel'
 import DashboardsPanel from './screens/DashboardsPanel'
+import ActualizacionDatosPanel from './screens/ActualizacionDatosPanel'
 import AgricultorPanel from './screens/AgricultorPanel'
 import SalesTechnicianPanel from './screens/SalesTechnicianPanel'
 import SalesTechnicianLayout from './screens/SalesTechnicianLayout'
@@ -19,6 +20,8 @@ import VentasPanel from './screens/VentasPanel'
 import ClientesPanel from './screens/ClientesPanel'
 import ProductosPanel from './screens/ProductosPanel'
 import ReportesPanel from './screens/ReportesPanel'
+import AlertasCercanasPanel from './screens/AlertasCercanasPanel'
+import MapaPlagasPanel from './screens/MapaPlagasPanel'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import { DefaultRedirect } from './components/DefaultRedirect/DefaultRedirect'
 
@@ -52,6 +55,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="inventario" element={<InventarioPanel />} />
             <Route path="validacion" element={<ValidacionPanel />} />
             <Route path="dashboards" element={<DashboardsPanel />} />
+            <Route path="actualizaciones" element={<ActualizacionDatosPanel />} />
           </Route>
 
           {/* Agricultor only */}
@@ -73,6 +77,8 @@ createRoot(document.getElementById('root')!).render(
             <Route path="clientes" element={<ClientesPanel />} />
             <Route path="productos" element={<ProductosPanel />} />
             <Route path="reportes" element={<ReportesPanel />} />
+            <Route path="alertas" element={<AlertasCercanasPanel />} />
+            <Route path="mapa" element={<MapaPlagasPanel />} />
           </Route>
 
           {/* Unknown routes → default page or login */}

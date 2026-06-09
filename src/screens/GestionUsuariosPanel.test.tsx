@@ -12,6 +12,9 @@ vi.mock('../services/admin/users', () => ({
   registerUser: vi.fn(),
   updateUserById: vi.fn(),
   deactivateUserById: vi.fn(),
+  getPendingFarmers: vi.fn(),
+  approveFarmer: vi.fn(),
+  rejectFarmer: vi.fn(),
 }));
 
 import {
@@ -20,6 +23,7 @@ import {
   registerUser,
   updateUserById,
   deactivateUserById,
+  getPendingFarmers,
 } from '../services/admin/users';
 
 const mockGetUsers = vi.mocked(getUsers);
@@ -27,6 +31,7 @@ const mockGetUserById = vi.mocked(getUserById);
 const mockRegisterUser = vi.mocked(registerUser);
 const mockUpdateUserById = vi.mocked(updateUserById);
 const mockDeactivateUserById = vi.mocked(deactivateUserById);
+const mockGetPendingFarmers = vi.mocked(getPendingFarmers);
 
 const ACTIVE_USER: DataUser = {
   userId: 1,
@@ -70,6 +75,7 @@ function createWrapper() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockGetPendingFarmers.mockResolvedValue([]);
   mockGetUsers.mockImplementation(async (params: UserListParams) => {
     const all = [ACTIVE_USER, INACTIVE_USER];
     const nameQ = params.name?.toLowerCase();
@@ -525,7 +531,21 @@ describe('GestionUsuariosPanel', () => {
     expect(mockDeactivateUserById).not.toHaveBeenCalled();
   });
 
-  it('calls updateUserById to reactivate when toggle is clicked on inactive user', async () => {
+  it('opens confirm activate modal when toggle is clicked on inactive user', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`)).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+
+    expect(screen.getByTestId('confirm-activate-modal')).toBeInTheDocument();
+    expect(screen.getByText('Activar usuario')).toBeInTheDocument();
+    expect(screen.getByTestId('confirm-activate-modal')).toHaveTextContent(INACTIVE_USER.name);
+    expect(mockUpdateUserById).not.toHaveBeenCalled();
+  });
+
+  it('calls updateUserById to approve on confirm activate', async () => {
     mockUpdateUserById.mockResolvedValue({ ...INACTIVE_USER, isActive: true });
 
     render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
@@ -534,11 +554,25 @@ describe('GestionUsuariosPanel', () => {
     });
 
     await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+    await userEvent.click(screen.getByText('Activar'));
 
     await waitFor(() => {
       expect(mockUpdateUserById).toHaveBeenCalledWith(INACTIVE_USER.userId, { isActive: true });
+      expect(screen.queryByTestId('confirm-activate-modal')).not.toBeInTheDocument();
     });
-    expect(screen.queryByTestId('confirm-deactivate-modal')).not.toBeInTheDocument();
+  });
+
+  it('cancels activate confirm dialog without approving', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await waitFor(() => {
+      expect(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`)).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByLabelText(`Activar ${INACTIVE_USER.name}`));
+    await userEvent.click(screen.getByText('Cancelar'));
+
+    expect(screen.queryByTestId('confirm-activate-modal')).not.toBeInTheDocument();
+    expect(mockUpdateUserById).not.toHaveBeenCalled();
   });
 
   it('shows active/inactive status badges', async () => {

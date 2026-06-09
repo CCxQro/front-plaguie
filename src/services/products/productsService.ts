@@ -61,3 +61,8 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const { data } = await backendClient.get<Product[]>('/api/products', { params });
   return data;
 }
+
+export async function validateProduct(skuSellerId: number, statusId: number): Promise<Product> {
+  const { data } = await backendClient.patch<Product>(`/api/products/${skuSellerId}/validate`, { statusId });
+  return data;
+}

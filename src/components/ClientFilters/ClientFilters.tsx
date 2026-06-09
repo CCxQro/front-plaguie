@@ -142,7 +142,7 @@ export function ClientFilters({
         >
           <option value="">Todos los estados</option>
           {estadoParcelaOptions.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={opt} value={opt}>{opt.toUpperCase()}</option>
           ))}
         </select>
       </div>
@@ -161,7 +161,7 @@ export function ClientFilters({
         >
           <option value="">Todos los estados</option>
           {stateOptions.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+            <option key={opt} value={opt}>{opt.toUpperCase()}</option>
           ))}
         </select>
       </div>
