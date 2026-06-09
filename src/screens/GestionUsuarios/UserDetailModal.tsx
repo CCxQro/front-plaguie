@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getInitials } from '../../utils/getInitials';
 import { roleBadgeClasses, roleIdToLabel } from './roleUtils';
 import { getUserById, getFarmerByUserId } from '../../services/admin/users';
+import { LocationPicker } from '../../components/LocationPicker/LocationPicker';
 
 interface Props {
   userId: number;
@@ -145,6 +146,16 @@ function UserDetailModal({ userId, onClose }: Props) {
                 <p className="text-xs font-semibold uppercase tracking-wider text-[#6A7282]">
                   Ubicación
                 </p>
+                <LocationPicker
+                  readOnly
+                  value={{
+                    latitude: viewingUser.location.latitude,
+                    longitude: viewingUser.location.longitude,
+                    stateName: viewingUser.location.stateName,
+                    municipalityName: viewingUser.location.municipalityName,
+                    localityName: viewingUser.location.localityName,
+                  }}
+                />
                 {LOCATION_ROWS.map(([label, key]) => (
                   <div key={key} className="flex items-center justify-between gap-4">
                     <span className="shrink-0 text-sm font-medium text-[#6A7282]">{label}</span>

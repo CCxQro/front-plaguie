@@ -1,52 +1,91 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NuevoProductoModal } from './NuevoProductoModal';
 import userEvent from '@testing-library/user-event';
 
+const mutate = vi.fn();
 vi.mock('../../hooks/useCategories', () => ({
-  useCategories: () => ({ data: [] }),
+  useCategories: () => ({ data: [{ categoryId: 1, name: 'Fertilizantes' }], isLoading: false }),
 }));
 vi.mock('../../hooks/useProviders', () => ({
-  useProviders: () => ({ data: [] }),
+  useProviders: () => ({ data: [{ providerId: 1, name: 'Proveedor X' }], isLoading: false }),
 }));
 vi.mock('../../hooks/useUnits', () => ({
-  useUnits: () => ({ data: [] }),
+  useUnits: () => ({ data: [{ unitId: 1, name: 'Litro' }], isLoading: false }),
+}));
+vi.mock('../../hooks/useTechnicalSellerId', () => ({
+  useTechnicalSellerId: () => ({ data: 7, isLoading: false, error: null }),
 }));
 vi.mock('../../hooks/useCreateProduct', () => ({
-  useCreateProduct: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateProduct: () => ({ mutate, isPending: false, isSuccess: false, error: null }),
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+import { NuevoProductoModal } from './NuevoProductoModal';
+
+beforeEach(() => vi.clearAllMocks());
+
+function uploadImage(container: HTMLElement) {
+  const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+  return userEvent.upload(fileInput, new File(['img'], 'p.png', { type: 'image/png' }));
 }
 
 describe('NuevoProductoModal', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it('keeps input values literal (XSS mitigation, SCRUM-299)', async () => {
+    render(<NuevoProductoModal onClose={() => {}} />);
+    const nameInput = screen.getAllByRole('textbox')[0];
+    await userEvent.type(nameInput, '<script>alert(1)</script>');
+    expect(nameInput).toHaveValue('<script>alert(1)</script>');
   });
 
-  it('escapes HTML characters in inputs to prevent XSS (SCRUM-299)', async () => {
-    render(<NuevoProductoModal onClose={() => {}} />, { wrapper: createWrapper() });
-    
-    const maliciousName = '<script>alert("xss")</script>';
-    
-    // Find the input by its label or name
-    const inputs = screen.getAllByRole('textbox');
-    // The first textbox is likely the name
-    const nameInput = inputs[0];
+  it('rejects images with an invalid type', () => {
+    const { container } = render(<NuevoProductoModal onClose={() => {}} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(fileInput, 'files', {
+      value: [new File(['x'], 'a.gif', { type: 'image/gif' })],
+      configurable: true,
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(screen.getByText(/Solo se aceptan archivos/i)).toBeInTheDocument();
+  });
 
-    await userEvent.type(nameInput, maliciousName);
-    
-    // The input value should be literally the script string
-    expect(nameInput).toHaveValue(maliciousName);
+  it('shows validation errors when submitting an empty form', async () => {
+    const { container } = render(<NuevoProductoModal onClose={() => {}} />);
+    await uploadImage(container);
 
-    // Since React escapes everything passed as values, and we don't render this back 
-    // to the DOM using dangerouslySetInnerHTML anywhere, XSS is mitigated.
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar Producto' }));
+
+    expect(screen.getAllByText('Requerido').length).toBeGreaterThan(0);
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it('submits the product when the form is valid', async () => {
+    const { container } = render(<NuevoProductoModal onClose={() => {}} />);
+    await uploadImage(container);
+
+    await userEvent.type(screen.getByPlaceholderText('Ej: Fungicida X-100 Pro'), 'NPK');
+    await userEvent.type(screen.getByPlaceholderText('Ej: FG-100-2024'), 'NPK-1');
+
+    const [categorySel, providerSel, unitSel] = screen.getAllByRole('combobox');
+    await userEvent.selectOptions(categorySel, '1');
+    await userEvent.selectOptions(providerSel, '1');
+    await userEvent.selectOptions(unitSel, '1');
+
+    const zeros = screen.getAllByPlaceholderText('0');
+    await userEvent.type(zeros[0], '2'); // unit value
+    await userEvent.type(zeros[1], '100'); // price
+    await userEvent.type(zeros[2], '50'); // stock
+
+    await userEvent.click(screen.getByRole('button', { name: 'Agregar Producto' }));
+
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate.mock.calls[0][0]).toMatchObject({
+      sellerId: 7,
+      name: 'NPK',
+      sku: 'NPK-1',
+      categoryId: 1,
+      providerId: 1,
+      unitId: 1,
+      price: '100.00000',
+      stock: 50,
+    });
   });
 });

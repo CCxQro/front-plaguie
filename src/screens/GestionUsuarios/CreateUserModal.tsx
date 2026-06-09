@@ -1,3 +1,5 @@
+import { LocationPicker, type LocationPickerValue } from '../../components/LocationPicker/LocationPicker';
+
 export interface CreateLocationForm {
   stateName: string;
   municipalityName: string;
@@ -42,6 +44,23 @@ function CreateUserModal({
     'h-10.5 w-full rounded-[10px] border border-[#D1D5DC] px-4 text-base outline-none focus:ring-2 focus:ring-[#00A63E]/15';
 
   const modalWidthClass = requiresLocation ? 'max-w-3xl' : 'max-w-md';
+
+  const pickerValue: LocationPickerValue = {
+    latitude: form.location.latitude ? Number(form.location.latitude) : null,
+    longitude: form.location.longitude ? Number(form.location.longitude) : null,
+    stateName: form.location.stateName,
+    municipalityName: form.location.municipalityName,
+    localityName: form.location.localityName,
+  };
+
+  const handlePickerChange = (next: LocationPickerValue) =>
+    onLocationChange({
+      latitude: next.latitude != null ? String(next.latitude) : '',
+      longitude: next.longitude != null ? String(next.longitude) : '',
+      stateName: next.stateName,
+      municipalityName: next.municipalityName,
+      localityName: next.localityName,
+    });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-8">
@@ -141,38 +160,9 @@ function CreateUserModal({
                 Ubicación
               </p>
               <p className="text-xs text-[#6A7282]">
-                Todos los campos de ubicación son obligatorios para este rol.
+                Selecciona la ubicación en el mapa: el estado, municipio y localidad se completan
+                automáticamente y las coordenadas son la referencia exacta.
               </p>
-
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#364153]">Estado</span>
-                <input
-                  value={form.location.stateName}
-                  onChange={(e) => onLocationChange({ stateName: e.target.value })}
-                  placeholder="Ej. Nuevo León"
-                  className={inputClass}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#364153]">Municipio</span>
-                <input
-                  value={form.location.municipalityName}
-                  onChange={(e) => onLocationChange({ municipalityName: e.target.value })}
-                  placeholder="Ej. Monterrey"
-                  className={inputClass}
-                />
-              </label>
-
-              <label className="block">
-                <span className="mb-1 block text-sm font-medium text-[#364153]">Localidad</span>
-                <input
-                  value={form.location.localityName}
-                  onChange={(e) => onLocationChange({ localityName: e.target.value })}
-                  placeholder="Ej. Centro"
-                  className={inputClass}
-                />
-              </label>
 
               <label className="block">
                 <span className="mb-1 block text-sm font-medium text-[#364153]">Propiedad</span>
@@ -184,28 +174,7 @@ function CreateUserModal({
                 />
               </label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-[#364153]">Latitud</span>
-                  <input
-                    type="number"
-                    value={form.location.latitude}
-                    onChange={(e) => onLocationChange({ latitude: e.target.value })}
-                    placeholder="25.6866"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block">
-                  <span className="mb-1 block text-sm font-medium text-[#364153]">Longitud</span>
-                  <input
-                    type="number"
-                    value={form.location.longitude}
-                    onChange={(e) => onLocationChange({ longitude: e.target.value })}
-                    placeholder="-100.3161"
-                    className={inputClass}
-                  />
-                </label>
-              </div>
+              <LocationPicker value={pickerValue} onChange={handlePickerChange} />
             </div>
           ) : null}
         </div>

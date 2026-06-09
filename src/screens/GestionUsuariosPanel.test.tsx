@@ -17,6 +17,39 @@ vi.mock('../services/admin/users', () => ({
   rejectFarmer: vi.fn(),
 }));
 
+// Stub the Leaflet-based picker so jsdom doesn't load map tiles/assets. The
+// stub exposes a button that reports a fixed geocoded location through onChange.
+vi.mock('../components/LocationPicker/LocationPicker', () => ({
+  LocationPicker: ({
+    value,
+    onChange,
+    readOnly,
+  }: {
+    value: { stateName: string };
+    onChange?: (v: unknown) => void;
+    readOnly?: boolean;
+  }) =>
+    readOnly ? (
+      <div data-testid="location-picker-readonly">{value.stateName}</div>
+    ) : (
+      <button
+        type="button"
+        data-testid="mock-pick-location"
+        onClick={() =>
+          onChange?.({
+            latitude: 25.6866,
+            longitude: -100.3161,
+            stateName: 'Nuevo León',
+            municipalityName: 'Monterrey',
+            localityName: 'Centro',
+          })
+        }
+      >
+        pick
+      </button>
+    ),
+}));
+
 import {
   getUsers,
   getUserById,
@@ -348,6 +381,20 @@ describe('GestionUsuariosPanel', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows a Spanish validation error when the password is too short', async () => {
+    render(<GestionUsuariosPanel />, { wrapper: createWrapper() });
+    await userEvent.click(screen.getByTestId('create-user-button'));
+
+    await userEvent.type(screen.getByPlaceholderText('Ej. Juan Pérez'), 'Nuevo Usuario');
+    await userEvent.type(screen.getByPlaceholderText('juan.perez@empresa.com'), 'nuevo@example.com');
+    await userEvent.type(screen.getByPlaceholderText('Contraseña'), '123');
+    await userEvent.type(screen.getByPlaceholderText('Repite la contraseña'), '123');
+    await userEvent.click(screen.getByText('Guardar Usuario'));
+
+    expect(screen.getByText('La contraseña debe tener al menos 6 caracteres.')).toBeInTheDocument();
+    expect(mockRegisterUser).not.toHaveBeenCalled();
+  });
+
   it('calls registerUser and closes modal on successful create', async () => {
     const newUser: DataUser = { ...ACTIVE_USER, userId: 3, name: 'Nuevo Usuario', email: 'nuevo@example.com' };
     mockRegisterUser.mockResolvedValue(newUser);
@@ -359,12 +406,8 @@ describe('GestionUsuariosPanel', () => {
     await userEvent.type(screen.getByPlaceholderText('juan.perez@empresa.com'), 'nuevo@example.com');
     await userEvent.type(screen.getByPlaceholderText('Contraseña'), 'password123');
     await userEvent.type(screen.getByPlaceholderText('Repite la contraseña'), 'password123');
-    await userEvent.type(screen.getByPlaceholderText('Ej. Nuevo León'), 'Nuevo León');
-    await userEvent.type(screen.getByPlaceholderText('Ej. Monterrey'), 'Monterrey');
-    await userEvent.type(screen.getByPlaceholderText('Ej. Centro'), 'Centro');
     await userEvent.type(screen.getByPlaceholderText('Ej. Rancho San Pedro'), 'Rancho San Pedro');
-    await userEvent.type(screen.getByPlaceholderText('25.6866'), '25.6866');
-    await userEvent.type(screen.getByPlaceholderText('-100.3161'), '-100.3161');
+    await userEvent.click(screen.getByTestId('mock-pick-location'));
     await userEvent.click(screen.getByText('Guardar Usuario'));
 
     await waitFor(() => {

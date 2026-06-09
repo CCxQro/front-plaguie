@@ -23,6 +23,10 @@ import type { CreateForm } from './GestionUsuarios/CreateUserModal';
 
 const PAGE_SIZE = 10;
 
+// Firebase requires passwords of at least 6 characters; validate client-side so
+// the user gets immediate Spanish feedback instead of a Firebase round-trip.
+const MIN_PASSWORD_LENGTH = 6;
+
 const EMPTY_LOCATION_FORM = {
   stateName: '',
   municipalityName: '',
@@ -167,6 +171,11 @@ function GestionUsuariosPanel() {
 
     if (createForm.password !== createForm.confirmPassword) {
       setFormError('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (createForm.password.length < MIN_PASSWORD_LENGTH) {
+      setFormError('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
