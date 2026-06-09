@@ -1,76 +1,103 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { EditarProductoModal } from './EditarProductoModal';
-import { useProduct } from '../../hooks/useProduct';
+import userEvent from '@testing-library/user-event';
 
-vi.mock('../../hooks/useProduct');
+const mutate = vi.fn();
+vi.mock('../../hooks/useProduct', () => ({ useProduct: vi.fn() }));
 vi.mock('../../hooks/useCategories', () => ({
-  useCategories: () => ({ data: [] }),
+  useCategories: () => ({ data: [{ categoryId: 1, name: 'Fertilizantes' }] }),
 }));
 vi.mock('../../hooks/useProviders', () => ({
-  useProviders: () => ({ data: [] }),
+  useProviders: () => ({ data: [{ providerId: 1, name: 'Proveedor X' }] }),
 }));
 vi.mock('../../hooks/useUnits', () => ({
-  useUnits: () => ({ data: [] }),
+  useUnits: () => ({ data: [{ unitId: 1, name: 'Kg' }] }),
 }));
 vi.mock('../../hooks/useUpdateProduct', () => ({
-  useUpdateProduct: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateProduct: () => ({ mutate, isPending: false, isSuccess: false, error: null }),
 }));
-vi.mock('../../hooks/useFirebaseImageUrl', () => ({
-  useFirebaseImageUrl: () => ({ data: null }),
-}));
+vi.mock('../../hooks/useFirebaseImageUrl', () => ({ useFirebaseImageUrl: () => ({ data: null }) }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-}
+import { useProduct } from '../../hooks/useProduct';
+import { EditarProductoModal } from './EditarProductoModal';
+
+const productHook = vi.mocked(useProduct);
+
+const product = {
+  skuSellerId: 1,
+  name: 'NPK',
+  sku: 'NPK-1',
+  categoryId: 1,
+  providerId: 1,
+  unitValue: 10,
+  unitId: 1,
+  description: 'desc',
+  statusId: 1,
+  firebaseImageId: 'img',
+  latestPrice: '150',
+  stock: 50,
+  unitName: 'Kg',
+  categoryName: 'Fertilizantes',
+  providerName: 'Proveedor X',
+  sellerName: 'Vendedor',
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  productHook.mockReturnValue({ data: product, isLoading: false, error: null } as never);
+});
 
 describe('EditarProductoModal', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('escapes HTML characters to prevent XSS (SCRUM-294)', async () => {
-    // Return a product with a malicious script payload in the name and sku
-    const maliciousName = '<script>alert("xss")</script>';
-    vi.mocked(useProduct).mockReturnValue({
-      data: {
-        skuSellerId: 1,
-        name: maliciousName,
-        sku: '<img src=x onerror=alert(1)>',
-        categoryId: 1,
-        providerId: 1,
-        unitValue: 10,
-        unitId: 1,
-        description: 'Test description',
-        statusId: 1,
-        firebaseImageId: '123',
-        latestPrice: '150',
-        stock: 50,
-        unitName: 'Kg',
-      },
+  it('keeps malicious input literal (XSS mitigation, SCRUM-294)', () => {
+    productHook.mockReturnValue({
+      data: { ...product, name: '<script>alert(1)</script>' },
       isLoading: false,
       error: null,
-    } as unknown as import('@tanstack/react-query').UseQueryResult<import('../../types/Product').Product, Error>);
+    } as never);
+    render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />);
+    expect(screen.getByDisplayValue('<script>alert(1)</script>')).toBeInTheDocument();
+  });
 
-    render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />, { wrapper: createWrapper() });
-    
-    // The input value should be literally the script string
-    const nameInput = screen.getByDisplayValue(maliciousName);
-    expect(nameInput).toBeInTheDocument();
-    
-    // Check that it's rendered in the sub-header properly escaped, we check by text content
-    const subheader = screen.getByText((content) => {
-      return content.includes('<img src=x onerror=alert(1)>');
+  it('shows the loading state', () => {
+    productHook.mockReturnValue({ data: undefined, isLoading: true, error: null } as never);
+    render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Guardar Cambios' })).toBeDisabled();
+  });
+
+  it('submits the prefilled form', () => {
+    render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate.mock.calls[0][0]).toMatchObject({
+      skuSellerId: 1,
+      payload: expect.objectContaining({ name: 'NPK', sku: 'NPK-1', categoryId: 1, unitId: 1 }),
     });
-    expect(subheader).toBeInTheDocument();
+  });
 
-    // Since React escapes everything passed as children, the fact that we can find it as plain text
-    // and that dangerouslySetInnerHTML is not used proves that XSS is mitigated.
+  it('submits edited values', async () => {
+    render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />);
+    const nameInput = screen.getByDisplayValue('NPK');
+    await userEvent.clear(nameInput);
+    await userEvent.type(nameInput, 'NPK v2');
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar Cambios' }));
+    expect(mutate.mock.calls[0][0].payload).toMatchObject({ name: 'NPK v2' });
+  });
+
+  it('rejects an invalid image type', () => {
+    const { container } = render(<EditarProductoModal skuSellerId={1} onClose={() => {}} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(fileInput, 'files', {
+      value: [new File(['x'], 'a.gif', { type: 'image/gif' })],
+      configurable: true,
+    });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(screen.getByText(/Solo se aceptan archivos/i)).toBeInTheDocument();
+  });
+
+  it('closes via cancel', () => {
+    const onClose = vi.fn();
+    render(<EditarProductoModal skuSellerId={1} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onClose).toHaveBeenCalled();
   });
 });
