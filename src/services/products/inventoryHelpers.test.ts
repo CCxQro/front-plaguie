@@ -72,7 +72,7 @@ describe('inventoryHelpers', () => {
   });
 
   it('getDisplayPrice uses the latest price', () => {
-    expect(getDisplayPrice(product({ latestPrice: 25 }))).toBe('$25.00');
+    expect(getDisplayPrice(product({ latestPrice: '25' }))).toBe('$25.00');
     expect(getDisplayPrice(product({ latestPrice: null }))).toBe('—');
   });
 
