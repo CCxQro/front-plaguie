@@ -131,4 +131,62 @@ describe('ReportesPanel', () => {
     );
     expect(screen.getByTestId('report-error')).toHaveTextContent('Backend caído');
   });
+
+  it('triggers Excel download via service', async () => {
+    mockFetch.mockResolvedValueOnce({
+      region: 'Jalisco',
+      season: 'Verano',
+      generatedAt: null,
+      observationsAnalyzed: 0,
+      executiveSummary: null,
+      predictions: [],
+      hotspots: [],
+      recommendations: [],
+    });
+    mockExcel.mockResolvedValueOnce(
+      new Blob(['PK'], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    );
+
+    const origCreate = URL.createObjectURL;
+    const origRevoke = URL.revokeObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:fake');
+    URL.revokeObjectURL = vi.fn();
+
+    render(<ReportesPanel />, { wrapper: createWrapper() });
+    await userEvent.type(screen.getByTestId('input-region'), 'Jalisco');
+    await userEvent.click(screen.getByTestId('generate-report-button'));
+    await waitFor(() => expect(screen.getByTestId('download-excel-button')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByTestId('download-excel-button'));
+    await waitFor(() =>
+      expect(mockExcel).toHaveBeenCalledWith({ region: 'Jalisco', season: 'verano' }),
+    );
+
+    URL.createObjectURL = origCreate;
+    URL.revokeObjectURL = origRevoke;
+  });
+
+  it('shows an export error when a download fails', async () => {
+    mockFetch.mockResolvedValueOnce({
+      region: 'Jalisco',
+      season: 'Verano',
+      generatedAt: null,
+      observationsAnalyzed: 0,
+      executiveSummary: null,
+      predictions: [],
+      hotspots: [],
+      recommendations: [],
+    });
+    mockPdf.mockRejectedValueOnce(new Error('PDF no disponible'));
+
+    render(<ReportesPanel />, { wrapper: createWrapper() });
+    await userEvent.type(screen.getByTestId('input-region'), 'Jalisco');
+    await userEvent.click(screen.getByTestId('generate-report-button'));
+    await waitFor(() => expect(screen.getByTestId('download-pdf-button')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByTestId('download-pdf-button'));
+    await waitFor(() => expect(screen.getByTestId('export-error')).toHaveTextContent('PDF no disponible'));
+  });
 });

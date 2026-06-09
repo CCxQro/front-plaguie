@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ActualizacionDatosPanel from './ActualizacionDatosPanel';
@@ -88,5 +88,36 @@ describe('ActualizacionDatosPanel', () => {
     });
     
     expect(screen.getByTestId('upload-button')).toBeDisabled();
+  });
+
+  it('rejects non-CSV files', async () => {
+    renderComponent();
+    const fileInput = screen.getByTestId('file-upload-input');
+    const file = new File(['x'], 'data.txt', { type: 'text/plain' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByText(/Formato inválido/i)).toBeInTheDocument());
+    expect(screen.getByTestId('upload-button')).toBeDisabled();
+  });
+
+  it('shows a success toast after a valid upload', async () => {
+    (ingestionService.uploadIngestionFile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      status: 'queued',
+    });
+    renderComponent();
+    const file = new File(['a,b\n1,2'], 'data.csv', { type: 'text/csv' });
+    await userEvent.upload(screen.getByTestId('file-upload-input'), file);
+    await userEvent.click(screen.getByTestId('upload-button'));
+    await waitFor(() => expect(screen.getByText('Archivo en cola')).toBeInTheDocument());
+  });
+
+  it('shows an error toast when the upload fails', async () => {
+    (ingestionService.uploadIngestionFile as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Servidor caído'),
+    );
+    renderComponent();
+    const file = new File(['a,b\n1,2'], 'data.csv', { type: 'text/csv' });
+    await userEvent.upload(screen.getByTestId('file-upload-input'), file);
+    await userEvent.click(screen.getByTestId('upload-button'));
+    await waitFor(() => expect(screen.getByText(/Error al subir/i)).toBeInTheDocument());
   });
 });
