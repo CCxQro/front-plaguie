@@ -17,7 +17,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       // 'text' = resumen en terminal, 'html' = dashboard navegable en coverage/index.html
-      reporter: ['text', 'html', 'lcov'],
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
       reportsDirectory: './coverage',
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
