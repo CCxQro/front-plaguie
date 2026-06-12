@@ -5,11 +5,9 @@ import { getInitials } from '../../utils/getInitials';
 import type { SidebarItem } from '../../components/Sidebar/Sidebar';
 
 const SIDEBAR_ITEMS: SidebarItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', href: '/app/dashboard' },
   { id: 'usuarios', label: 'Gestión de Usuarios', icon: 'usuarios', href: '/app/usuarios' },
   { id: 'inventario', label: 'Inventario Global', icon: 'cubo', href: '/app/inventario' },
   { id: 'validacion', label: 'Validación de Registros', icon: 'validacion', href: '/app/validacion' },
-  { id: 'dashboards', label: 'Dashboards', icon: 'dashboards', href: '/app/dashboards' },
   { id: 'actualizaciones', label: 'Actualización de Datos', icon: 'informacion', href: '/app/actualizaciones' },
 ];
 

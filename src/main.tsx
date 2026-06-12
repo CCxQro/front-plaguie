@@ -7,16 +7,13 @@ import './index.css'
 import Login from './screens/auth/Login'
 import StatusPage from './screens/auth/StatusPage'
 import AdminLayout from './screens/admin/AdminLayout'
-import AdminOverviewPanel from './screens/admin/AdminOverviewPanel'
 import GestionUsuariosPanel from './screens/admin/usuarios/GestionUsuariosPanel'
 import InventarioPanel from './screens/admin/InventarioPanel'
 import ValidacionPanel from './screens/admin/ValidacionPanel'
-import DashboardsPanel from './screens/admin/DashboardsPanel'
 import ActualizacionDatosPanel from './screens/admin/ActualizacionDatosPanel'
 import AgricultorPanel from './screens/agricultor/AgricultorPanel'
 import SalesTechnicianPanel from './screens/ventas/SalesTechnicianPanel'
 import SalesTechnicianLayout from './screens/ventas/SalesTechnicianLayout'
-import VentasPanel from './screens/ventas/VentasPanel'
 import ClientesPanel from './screens/ventas/ClientesPanel'
 import ProductosPanel from './screens/ventas/ProductosPanel'
 import ReportesPanel from './screens/ventas/ReportesPanel'
@@ -50,11 +47,9 @@ createRoot(document.getElementById('root')!).render(
             </ProtectedRoute>
           }>
             <Route index element={<Navigate to="usuarios" replace />} />
-            <Route path="dashboard" element={<AdminOverviewPanel />} />
             <Route path="usuarios" element={<GestionUsuariosPanel />} />
             <Route path="inventario" element={<InventarioPanel />} />
             <Route path="validacion" element={<ValidacionPanel />} />
-            <Route path="dashboards" element={<DashboardsPanel />} />
             <Route path="actualizaciones" element={<ActualizacionDatosPanel />} />
           </Route>
 
@@ -73,7 +68,6 @@ createRoot(document.getElementById('root')!).render(
           }>
             <Route index element={<Navigate to="inicio" replace />} />
             <Route path="inicio" element={<SalesTechnicianPanel />} />
-            <Route path="ventas" element={<VentasPanel />} />
             <Route path="clientes" element={<ClientesPanel />} />
             <Route path="productos" element={<ProductosPanel />} />
             <Route path="reportes" element={<ReportesPanel />} />
